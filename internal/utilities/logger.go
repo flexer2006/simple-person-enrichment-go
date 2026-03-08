@@ -210,11 +210,14 @@ func Log(ctx context.Context, level LogLevel, msg string, fields ...zap.Field) {
 func Debug(ctx context.Context, msg string, fields ...zap.Field) {
 	Log(ctx, DebugLevel, msg, fields...)
 }
+
 func Info(ctx context.Context, msg string, fields ...zap.Field) { Log(ctx, InfoLevel, msg, fields...) }
 func Warn(ctx context.Context, msg string, fields ...zap.Field) { Log(ctx, WarnLevel, msg, fields...) }
+
 func Error(ctx context.Context, msg string, fields ...zap.Field) {
 	Log(ctx, ErrorLevel, msg, fields...)
 }
+
 func Fatal(ctx context.Context, msg string, fields ...zap.Field) {
 	Log(ctx, FatalLevel, msg, fields...)
 }

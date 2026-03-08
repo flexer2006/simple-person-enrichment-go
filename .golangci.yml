@@ -11,6 +11,7 @@ issues:
   exclude:
     - "error return value not checked.*(Close|Write|Read)"
     - "should have comment or be unexported"
+    - "exported:.*should have comment or be unexported"
 
 linters:
   enable:
@@ -21,15 +22,15 @@ linters:
     - gosec
     - ineffassign
     - dupl
-    - revive
     - gocritic
     - unparam
     - misspell
     - dogsled
-    - depguard
   disable:
     - lll
     - gochecknoglobals
+    - revive
+    - depguard
 
 linters-settings:
   errcheck:

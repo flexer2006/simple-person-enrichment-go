@@ -26,8 +26,7 @@ func main() {
 	func() {
 		defer func() {
 			if err := initialLogger.Sync(); err != nil {
-				errMsg := err.Error()
-				if strings.Contains(errMsg, "sync /dev/stderr: invalid argument") ||
+				if errMsg := err.Error(); strings.Contains(errMsg, "sync /dev/stderr: invalid argument") ||
 					strings.Contains(errMsg, "sync /dev/stdout: invalid argument") {
 					return
 				}
@@ -38,9 +37,8 @@ func main() {
 				}
 			}
 		}()
-		var cfgPath = "./deploy/.env"
 		cfg, err := utilities.Load[domain.Config](ctx, utilities.LoadOptions{
-			ConfigPath: cfgPath,
+			ConfigPath: "./deploy/.env",
 		})
 		if err != nil {
 			utilities.Error(ctx, "failed to load configuration", zap.Error(err))
@@ -66,11 +64,10 @@ func main() {
 		}
 
 		utilities.SetGlobal(finalLogger)
-		var defaultTimeout = 5 * time.Second
 		shutdownTimeout, err := time.ParseDuration(cfg.Graceful.ShutdownTimeout)
 		if err != nil {
 			utilities.Error(ctx, "invalid graceful shutdown timeout", zap.Error(err))
-			shutdownTimeout = defaultTimeout
+			shutdownTimeout = 5 * time.Second
 		}
 
 		dbConfig := database.Config{

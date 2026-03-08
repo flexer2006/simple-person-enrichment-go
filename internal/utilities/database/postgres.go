@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"net/url"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/flexer2006/case-person-enrichment-go/internal/utilities"
@@ -32,6 +35,12 @@ type PostgresConfig struct {
 	MaxConns int
 }
 
+type PostgresDB struct {
+	pool *pgxpool.Pool
+	PostgresConfig
+	dsn string
+}
+
 func (c PostgresConfig) Validate() error {
 	if c.Host == "" || c.Port == 0 || c.User == "" || c.Database == "" {
 		return ErrInvalidConfiguration
@@ -44,23 +53,23 @@ func (c PostgresConfig) DSN() string {
 		c.User, c.Password, c.Host, c.Port, c.Database, c.SSLMode)
 }
 
-type PostgresDB struct {
-	pool   *pgxpool.Pool
-	dsn    string
-	config PostgresConfig
-}
-
 func NewPostgres(ctx context.Context, config PostgresConfig) (*PostgresDB, error) {
 	if err := config.Validate(); err != nil {
 		utilities.Error(ctx, "invalid database configuration", zap.Error(err))
 		return nil, err
 	}
+
 	dsn := config.DSN()
 	pool, err := connect(ctx, dsn, config.MinConns, config.MaxConns)
 	if err != nil {
 		return nil, err
 	}
-	return &PostgresDB{pool: pool, dsn: dsn, config: config}, nil
+
+	return &PostgresDB{
+		pool:           pool,
+		dsn:            dsn,
+		PostgresConfig: config,
+	}, nil
 }
 
 func connect(ctx context.Context, dsn string, minConn, maxConn int) (*pgxpool.Pool, error) {
@@ -104,9 +113,11 @@ func applyLimits(cfg *pgxpool.Config, minConn, maxConn int) {
 			return int32(n)
 		}
 	}
+
 	if minConn > 0 {
 		cfg.MinConns = to32(minConn)
 	}
+
 	if maxConn > 0 {
 		cfg.MaxConns = to32(maxConn)
 	}
@@ -117,8 +128,10 @@ func (db *PostgresDB) Pool() *pgxpool.Pool {
 }
 
 func (db *PostgresDB) Close(ctx context.Context) {
-	utilities.Info(ctx, "closing postgres database connection")
-	db.pool.Close()
+	if db.pool != nil {
+		utilities.Info(ctx, "closing postgres database connection")
+		db.pool.Close()
+	}
 }
 
 func (db *PostgresDB) Ping(ctx context.Context) error {
@@ -128,19 +141,61 @@ func (db *PostgresDB) Ping(ctx context.Context) error {
 	return db.pool.Ping(ctx)
 }
 
+func parseDSN(dsn string) PostgresConfig {
+	if dsn == "" {
+		return PostgresConfig{}
+	}
+	u, err := url.Parse(dsn)
+	if err != nil {
+		return PostgresConfig{}
+	}
+
+	port := 0
+	if u.Port() != "" {
+		if p, err := strconv.Atoi(u.Port()); err == nil {
+			port = p
+		}
+	}
+
+	user := ""
+	password := ""
+	if u.User != nil {
+		user = u.User.Username()
+		password, _ = u.User.Password()
+	}
+
+	dbname := strings.TrimPrefix(u.Path, "/")
+	sslmode := u.Query().Get("sslmode")
+
+	return PostgresConfig{
+		Host:     u.Hostname(),
+		Port:     port,
+		User:     user,
+		Password: password,
+		Database: dbname,
+		SSLMode:  sslmode,
+	}
+}
+
 func NewPostgresWithDSN(ctx context.Context, dsn string, minConn, maxConn int) (*PostgresDB, error) {
 	if dsn == "" {
 		return nil, fmt.Errorf("dsn must not be empty")
 	}
+
 	pool, err := connect(ctx, dsn, minConn, maxConn)
 	if err != nil {
 		return nil, err
 	}
-	config := PostgresConfig{
-		MinConns: minConn,
-		MaxConns: maxConn,
-	}
-	return &PostgresDB{pool: pool, dsn: config.DSN(), config: config}, nil
+
+	config := parseDSN(dsn)
+	config.MinConns = minConn
+	config.MaxConns = maxConn
+
+	return &PostgresDB{
+		pool:           pool,
+		dsn:            dsn,
+		PostgresConfig: config,
+	}, nil
 }
 
 func (db *PostgresDB) GetDSN() string {
@@ -148,5 +203,5 @@ func (db *PostgresDB) GetDSN() string {
 }
 
 func (db *PostgresDB) Config() PostgresConfig {
-	return db.config
+	return db.PostgresConfig
 }

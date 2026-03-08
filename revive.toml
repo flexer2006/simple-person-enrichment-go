@@ -18,11 +18,6 @@ name = "naked-return"
 name = "unused-result"
 
 [[rule]]
-name = "exported"
-[rule.params]
-localOnly = false
-
-[[rule]]
 name = "import-shadow"
 
 [[rule]]

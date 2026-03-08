@@ -4,24 +4,6 @@
 
 This service is designed to store and enrich information about people. It allows creating, retrieving, updating and deleting records about individuals, as well as enriching their data with age, gender, and nationality using external APIs.
 
-## Technology Stack
-
-- **Go v1.24.2** - modern compiled programming language
-- **Fiber v3.0.0-beta.4** - fast HTTP framework built on FastHTTP
-- **PostgreSQL** - high-performance relational database
-- **Zap v1.27.0** - structured, high-performance logging library
-- **Docker/Docker Compose v3.8** - for containerization and service management
-- **Swagger** - for API documentation automation
-- **UUID v1.6.0** - for generating unique identifiers
-- **golang-migrate v4.18.3** - tool for database migration management
-- **Nginx v1.27.5** - high-performance web server and proxy
-
-## Architecture
-
-- **domain** - business logic and data models
-- **ports** - interfaces for interaction between layers
-- **adapters** - implementations of interfaces for external services and databases
-
 ## Service Launch
 
 ### Installation and Launch Using Docker

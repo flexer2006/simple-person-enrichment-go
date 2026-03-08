@@ -101,26 +101,6 @@ func (m *Migrator) Version(ctx context.Context, dsn string) (uint, bool, error) 
 	return version, dirty, nil
 }
 
-func (m *Migrator) Force(ctx context.Context, dsn string, version int) error {
-	path, err := m.migrationPath()
-	if err != nil {
-		return err
-	}
-
-	migrator, err := migrate.New(path, dsn)
-	if err != nil {
-		utilities.Error(ctx, "failed to create migration instance", zap.Error(err), zap.String("path", path))
-		return fmt.Errorf("failed to create migration instance: %w", err)
-	}
-	defer m.close(ctx, migrator)
-
-	if err := migrator.Force(version); err != nil {
-		utilities.Error(ctx, "failed to force migration version", zap.Error(err), zap.Int("version", version))
-		return fmt.Errorf("failed to force migration version %d: %w", version, err)
-	}
-	return nil
-}
-
 func (m *Migrator) migrationPath() (string, error) {
 	if m.cfg.Path == "" {
 		return "", ErrMigrationPathNotSpecified

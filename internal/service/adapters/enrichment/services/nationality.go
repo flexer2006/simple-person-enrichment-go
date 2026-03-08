@@ -7,8 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
-	domain "github.com/flexer2006/case-person-enrichment-go/internal/service/domain"
-	nationalitymodels "github.com/flexer2006/case-person-enrichment-go/internal/service/domain"
+	"github.com/flexer2006/case-person-enrichment-go/internal/service/domain"
 	logger "github.com/flexer2006/case-person-enrichment-go/internal/utilities"
 	"go.uber.org/zap"
 )
@@ -65,7 +64,7 @@ func (c *APIClient) GetNationalityByName(ctx context.Context, name string) (stri
 		return "", 0, fmt.Errorf("%w: status %d", domain.ErrNon200Response, resp.StatusCode)
 	}
 
-	var nationalityResp nationalitymodels.NationalityResponse
+	var nationalityResp domain.NationalityResponse
 	if err := json.NewDecoder(resp.Body).Decode(&nationalityResp); err != nil {
 		logger.Error(ctx, "failed to decode API response", zap.Error(err))
 		return "", 0, fmt.Errorf("failed to decode API response: %w", err)

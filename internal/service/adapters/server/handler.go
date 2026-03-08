@@ -13,6 +13,29 @@ import (
 	"go.uber.org/zap"
 )
 
+func sendJSONResponse(ctx fiber.Ctx, status int, body interface{}) error {
+	if err := ctx.Status(status).JSON(body); err != nil {
+		return fmt.Errorf("failed to send JSON response: %w", err)
+	}
+	return nil
+}
+
+func sendError(ctx fiber.Ctx, status int, msg string) error {
+	return sendJSONResponse(ctx, status, fiber.Map{"error": msg})
+}
+
+func parseUUIDParam(ctx fiber.Ctx, name string) (uuid.UUID, error) {
+	idStr := ctx.Params(name)
+	if idStr == "" {
+		return uuid.Nil, fmt.Errorf("missing %s parameter", name)
+	}
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return id, nil
+}
+
 type PersonHandler struct {
 	api          ports.API
 	repositories ports.Repositories
@@ -75,21 +98,19 @@ func (h *PersonHandler) GetPersons(ctx fiber.Ctx) error {
 	persons, total, err := h.repositories.GetPersons(requestCtx, filter, offset, limit)
 	if err != nil {
 		logger.Error(requestCtx, "failed to get persons", zap.Error(err))
-		if err := ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to retrieve persons",
-		}); err != nil {
-			return fmt.Errorf("failed to send JSON response: %w", err)
+		if err := sendError(ctx, fiber.StatusInternalServerError, "Failed to retrieve persons"); err != nil {
+			return err
 		}
 		return fmt.Errorf("failed to get persons: %w", err)
 	}
 
-	if err := ctx.JSON(fiber.Map{
+	if err := sendJSONResponse(ctx, fiber.StatusOK, fiber.Map{
 		"data":   persons,
 		"total":  total,
 		"limit":  limit,
 		"offset": offset,
 	}); err != nil {
-		return fmt.Errorf("failed to send JSON response: %w", err)
+		return err
 	}
 	return nil
 }
@@ -112,12 +133,10 @@ func (h *PersonHandler) GetPersonByID(ctx fiber.Ctx) error {
 
 	logger.Debug(requestCtx, "handling get person by ID request", zap.String("id", idParam))
 
-	personID, err := uuid.Parse(idParam)
+	personID, err := parseUUIDParam(ctx, "id")
 	if err != nil {
-		if err := ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid UUID format",
-		}); err != nil {
-			return fmt.Errorf("failed to send JSON response: %w", err)
+		if err := sendError(ctx, fiber.StatusBadRequest, "Invalid UUID format"); err != nil {
+			return err
 		}
 		return fmt.Errorf("invalid UUID format: %w", err)
 	}
@@ -125,23 +144,19 @@ func (h *PersonHandler) GetPersonByID(ctx fiber.Ctx) error {
 	person, err := h.repositories.GetByID(requestCtx, personID)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
-			if err := ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"error": "Person not found",
-			}); err != nil {
-				return fmt.Errorf("failed to send JSON response: %w", err)
+			if err := sendError(ctx, fiber.StatusNotFound, "Person not found"); err != nil {
+				return err
 			}
 			return fmt.Errorf("person not found: %w", err)
 		}
-		if err := ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get person",
-		}); err != nil {
-			return fmt.Errorf("failed to send JSON response: %w", err)
+		if err := sendError(ctx, fiber.StatusInternalServerError, "Failed to get person"); err != nil {
+			return err
 		}
 		return fmt.Errorf("failed to get person: %w", err)
 	}
 
-	if err := ctx.JSON(person); err != nil {
-		return fmt.Errorf("failed to send JSON response: %w", err)
+	if err := sendJSONResponse(ctx, fiber.StatusOK, person); err != nil {
+		return err
 	}
 	return nil
 }
@@ -163,19 +178,15 @@ func (h *PersonHandler) CreatePerson(ctx fiber.Ctx) error {
 
 	var person domain.Person
 	if err := ctx.Bind().Body(&person); err != nil {
-		if err := ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		}); err != nil {
-			return fmt.Errorf("failed to send JSON response: %w", err)
+		if err := sendError(ctx, fiber.StatusBadRequest, "Invalid request body"); err != nil {
+			return err
 		}
 		return fmt.Errorf("invalid request body: %w", err)
 	}
 
 	if person.Name == "" || person.Surname == "" {
-		if err := ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Name and surname are required",
-		}); err != nil {
-			return fmt.Errorf("failed to send JSON response: %w", err)
+		if err := sendError(ctx, fiber.StatusBadRequest, "Name and surname are required"); err != nil {
+			return err
 		}
 		return fmt.Errorf("%w", domain.ErrNameSurnameRequired)
 	}
@@ -186,16 +197,14 @@ func (h *PersonHandler) CreatePerson(ctx fiber.Ctx) error {
 
 	if err := h.repositories.CreatePerson(requestCtx, &person); err != nil {
 		logger.Error(requestCtx, "failed to create person", zap.Error(err))
-		if err := ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to create person",
-		}); err != nil {
-			return fmt.Errorf("failed to send JSON response: %w", err)
+		if err := sendError(ctx, fiber.StatusInternalServerError, "Failed to create person"); err != nil {
+			return err
 		}
 		return fmt.Errorf("failed to create person: %w", err)
 	}
 
-	if err := ctx.Status(fiber.StatusCreated).JSON(person); err != nil {
-		return fmt.Errorf("failed to send JSON response: %w", err)
+	if err := sendJSONResponse(ctx, fiber.StatusCreated, person); err != nil {
+		return err
 	}
 	return nil
 }
@@ -219,12 +228,10 @@ func (h *PersonHandler) UpdatePerson(ctx fiber.Ctx) error {
 
 	logger.Debug(requestCtx, "handling update person request", zap.String("id", idParam))
 
-	personID, err := uuid.Parse(idParam)
+	personID, err := parseUUIDParam(ctx, "id")
 	if err != nil {
-		if err := ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid UUID format",
-		}); err != nil {
-			return fmt.Errorf("failed to send JSON response: %w", err)
+		if err := sendError(ctx, fiber.StatusBadRequest, "Invalid UUID format"); err != nil {
+			return err
 		}
 		return fmt.Errorf("invalid UUID format: %w", err)
 	}
@@ -232,29 +239,23 @@ func (h *PersonHandler) UpdatePerson(ctx fiber.Ctx) error {
 	exists, err := h.repositories.ExistsByID(requestCtx, personID)
 	if err != nil {
 		logger.Error(requestCtx, "failed to check if person exists", zap.Error(err))
-		if err := ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to check if person exists",
-		}); err != nil {
-			return fmt.Errorf("failed to send JSON response: %w", err)
+		if err := sendError(ctx, fiber.StatusInternalServerError, "Failed to check if person exists"); err != nil {
+			return err
 		}
 		return fmt.Errorf("failed to check if person exists: %w", err)
 	}
 
 	if !exists {
-		if err := ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "Person not found",
-		}); err != nil {
-			return fmt.Errorf("failed to send JSON response: %w", err)
+		if err := sendError(ctx, fiber.StatusNotFound, "Person not found"); err != nil {
+			return err
 		}
 		return fmt.Errorf("%w", domain.ErrPersonNotFound)
 	}
 
 	var person domain.Person
 	if err := ctx.Bind().Body(&person); err != nil {
-		if err := ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		}); err != nil {
-			return fmt.Errorf("failed to send JSON response: %w", err)
+		if err := sendError(ctx, fiber.StatusBadRequest, "Invalid request body"); err != nil {
+			return err
 		}
 		return fmt.Errorf("invalid request body: %w", err)
 	}
@@ -262,26 +263,22 @@ func (h *PersonHandler) UpdatePerson(ctx fiber.Ctx) error {
 	person.ID = personID
 
 	if person.Name == "" || person.Surname == "" {
-		if err := ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Name and surname are required",
-		}); err != nil {
-			return fmt.Errorf("failed to send JSON response: %w", err)
+		if err := sendError(ctx, fiber.StatusBadRequest, "Name and surname are required"); err != nil {
+			return err
 		}
 		return fmt.Errorf("%w", domain.ErrNameSurnameRequired)
 	}
 
 	if err := h.repositories.UpdatePerson(requestCtx, &person); err != nil {
 		logger.Error(requestCtx, "failed to update person", zap.Error(err))
-		if err := ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to update person",
-		}); err != nil {
-			return fmt.Errorf("failed to send JSON response: %w", err)
+		if err := sendError(ctx, fiber.StatusInternalServerError, "Failed to update person"); err != nil {
+			return err
 		}
 		return fmt.Errorf("failed to update person: %w", err)
 	}
 
-	if err := ctx.JSON(person); err != nil {
-		return fmt.Errorf("failed to send JSON response: %w", err)
+	if err := sendJSONResponse(ctx, fiber.StatusOK, person); err != nil {
+		return err
 	}
 	return nil
 }
@@ -304,30 +301,24 @@ func (h *PersonHandler) DeletePerson(ctx fiber.Ctx) error {
 
 	logger.Debug(requestCtx, "handling delete person request", zap.String("id", idParam))
 
-	personID, err := uuid.Parse(idParam)
+	personID, err := parseUUIDParam(ctx, "id")
 	if err != nil {
-		if err := ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid UUID format",
-		}); err != nil {
-			return fmt.Errorf("failed to send JSON response: %w", err)
+		if err := sendError(ctx, fiber.StatusBadRequest, "Invalid UUID format"); err != nil {
+			return err
 		}
 		return fmt.Errorf("invalid UUID format: %w", err)
 	}
 
 	if err := h.repositories.DeletePerson(requestCtx, personID); err != nil {
 		if strings.Contains(err.Error(), "not found") {
-			if err := ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"error": "Person not found",
-			}); err != nil {
-				return fmt.Errorf("failed to send JSON response: %w", err)
+			if err := sendError(ctx, fiber.StatusNotFound, "Person not found"); err != nil {
+				return err
 			}
 			return fmt.Errorf("person not found: %w", err)
 		}
 		logger.Error(requestCtx, "failed to delete person", zap.Error(err))
-		if err := ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to delete person",
-		}); err != nil {
-			return fmt.Errorf("failed to send JSON response: %w", err)
+		if err := sendError(ctx, fiber.StatusInternalServerError, "Failed to delete person"); err != nil {
+			return err
 		}
 		return fmt.Errorf("failed to delete person: %w", err)
 	}
@@ -356,12 +347,10 @@ func (h *PersonHandler) EnrichPerson(ctx fiber.Ctx) error {
 
 	logger.Debug(requestCtx, "handling enrich person request", zap.String("id", idParam))
 
-	personID, err := uuid.Parse(idParam)
+	personID, err := parseUUIDParam(ctx, "id")
 	if err != nil {
-		if err := ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid UUID format",
-		}); err != nil {
-			return fmt.Errorf("failed to send JSON response: %w", err)
+		if err := sendError(ctx, fiber.StatusBadRequest, "Invalid UUID format"); err != nil {
+			return err
 		}
 		return fmt.Errorf("invalid UUID format: %w", err)
 	}
@@ -369,18 +358,14 @@ func (h *PersonHandler) EnrichPerson(ctx fiber.Ctx) error {
 	person, err := h.repositories.GetByID(requestCtx, personID)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
-			if err := ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"error": "Person not found",
-			}); err != nil {
-				return fmt.Errorf("failed to send JSON response: %w", err)
+			if err := sendError(ctx, fiber.StatusNotFound, "Person not found"); err != nil {
+				return err
 			}
 			return fmt.Errorf("person not found: %w", err)
 		}
 		logger.Error(requestCtx, "failed to get person", zap.Error(err))
-		if err := ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get person",
-		}); err != nil {
-			return fmt.Errorf("failed to send JSON response: %w", err)
+		if err := sendError(ctx, fiber.StatusInternalServerError, "Failed to get person"); err != nil {
+			return err
 		}
 		return fmt.Errorf("failed to get person: %w", err)
 	}
@@ -426,16 +411,14 @@ func (h *PersonHandler) EnrichPerson(ctx fiber.Ctx) error {
 	err = h.repositories.UpdatePerson(requestCtx, person)
 	if err != nil {
 		logger.Error(requestCtx, "failed to save enriched data", zap.Error(err))
-		if err := ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to save enriched data",
-		}); err != nil {
-			return fmt.Errorf("failed to send JSON response: %w", err)
+		if serr := sendError(ctx, fiber.StatusInternalServerError, "Failed to save enriched data"); serr != nil {
+			return serr
 		}
 		return fmt.Errorf("failed to save enriched data: %w", err)
 	}
 
-	if err := ctx.JSON(person); err != nil {
-		return fmt.Errorf("failed to send JSON response: %w", err)
+	if err := sendJSONResponse(ctx, fiber.StatusOK, person); err != nil {
+		return err
 	}
 	return nil
 }
