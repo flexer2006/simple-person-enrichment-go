@@ -63,29 +63,6 @@ func (m *mockAPIAdapter) Person() interface {
 	})
 }
 
-type mockRepositories struct {
-	mock.Mock
-}
-
-func (m *mockRepositories) Person() interface {
-	GetByID(ctx context.Context, id uuid.UUID) (*domain.Person, error)
-	GetPersons(ctx context.Context, filter map[string]any, offset, limit int) ([]*domain.Person, int, error)
-	CreatePerson(ctx context.Context, person *domain.Person) error
-	UpdatePerson(ctx context.Context, person *domain.Person) error
-	DeletePerson(ctx context.Context, id uuid.UUID) error
-	ExistsByID(ctx context.Context, id uuid.UUID) (bool, error)
-} {
-	args := m.Called()
-	return args.Get(0).(interface {
-		GetByID(ctx context.Context, id uuid.UUID) (*domain.Person, error)
-		GetPersons(ctx context.Context, filter map[string]any, offset, limit int) ([]*domain.Person, int, error)
-		CreatePerson(ctx context.Context, person *domain.Person) error
-		UpdatePerson(ctx context.Context, person *domain.Person) error
-		DeletePerson(ctx context.Context, id uuid.UUID) error
-		ExistsByID(ctx context.Context, id uuid.UUID) (bool, error)
-	})
-}
-
 type mockPersonRepository struct {
 	mock.Mock
 }
@@ -154,28 +131,23 @@ func (m *mockNationalityService) GetNationalityByName(ctx context.Context, name 
 }
 
 func TestNewPersonService(t *testing.T) {
-	repositories := new(mockRepositories)
-	apiAdapter := new(mockAPIAdapter)
 	personRepo := new(mockPersonRepository)
+	apiAdapter := new(mockAPIAdapter)
 
-	repositories.On("Person").Return(personRepo)
-
-	service := app.NewPersonService(repositories, apiAdapter)
+	service := app.NewPersonService(personRepo, apiAdapter)
 	require.NotNil(t, service)
 }
 
 func TestPersonServiceGetByID(t *testing.T) {
-	repositories := new(mockRepositories)
-	apiAdapter := new(mockAPIAdapter)
 	personRepo := new(mockPersonRepository)
+	apiAdapter := new(mockAPIAdapter)
 	ctx := context.Background()
 	id := uuid.New()
 	expectedPerson := &domain.Person{ID: id, Name: "John Doe"}
 
-	repositories.On("Person").Return(personRepo)
 	personRepo.On("GetByID", mock.Anything, id).Return(expectedPerson, nil)
 
-	service := app.NewPersonService(repositories, apiAdapter)
+	service := app.NewPersonService(personRepo, apiAdapter)
 	person, err := service.GetByID(ctx, id)
 
 	require.NoError(t, err)
@@ -184,17 +156,15 @@ func TestPersonServiceGetByID(t *testing.T) {
 }
 
 func TestPersonServiceGetByIDError(t *testing.T) {
-	repositories := new(mockRepositories)
-	apiAdapter := new(mockAPIAdapter)
 	personRepo := new(mockPersonRepository)
+	apiAdapter := new(mockAPIAdapter)
 	ctx := context.Background()
 	id := uuid.New()
-	expectedError := errors.New("person not found")
+	expectedError := domain.ErrPersonNotFound
 
-	repositories.On("Person").Return(personRepo)
 	personRepo.On("GetByID", mock.Anything, id).Return(nil, expectedError)
 
-	service := app.NewPersonService(repositories, apiAdapter)
+	service := app.NewPersonService(personRepo, apiAdapter)
 	person, err := service.GetByID(ctx, id)
 
 	require.Error(t, err)
@@ -203,9 +173,8 @@ func TestPersonServiceGetByIDError(t *testing.T) {
 }
 
 func TestPersonServiceGetPersons(t *testing.T) {
-	repositories := new(mockRepositories)
-	apiAdapter := new(mockAPIAdapter)
 	personRepo := new(mockPersonRepository)
+	apiAdapter := new(mockAPIAdapter)
 	ctx := context.Background()
 	filter := map[string]any{"name": "John"}
 	expectedPersons := []*domain.Person{
@@ -214,10 +183,9 @@ func TestPersonServiceGetPersons(t *testing.T) {
 	}
 	expectedCount := 2
 
-	repositories.On("Person").Return(personRepo)
 	personRepo.On("GetPersons", mock.Anything, filter, 0, 10).Return(expectedPersons, expectedCount, nil)
 
-	service := app.NewPersonService(repositories, apiAdapter)
+	service := app.NewPersonService(personRepo, apiAdapter)
 	persons, count, err := service.GetPersons(ctx, filter, 0, 10)
 
 	require.NoError(t, err)
@@ -227,16 +195,14 @@ func TestPersonServiceGetPersons(t *testing.T) {
 }
 
 func TestPersonServiceCreatePerson(t *testing.T) {
-	repositories := new(mockRepositories)
-	apiAdapter := new(mockAPIAdapter)
 	personRepo := new(mockPersonRepository)
+	apiAdapter := new(mockAPIAdapter)
 	ctx := context.Background()
 	person := &domain.Person{Name: "John Doe"}
 
-	repositories.On("Person").Return(personRepo)
 	personRepo.On("CreatePerson", mock.Anything, person).Return(nil)
 
-	service := app.NewPersonService(repositories, apiAdapter)
+	service := app.NewPersonService(personRepo, apiAdapter)
 	err := service.CreatePerson(ctx, person)
 
 	require.NoError(t, err)
@@ -244,16 +210,14 @@ func TestPersonServiceCreatePerson(t *testing.T) {
 }
 
 func TestPersonServiceUpdatePerson(t *testing.T) {
-	repositories := new(mockRepositories)
-	apiAdapter := new(mockAPIAdapter)
 	personRepo := new(mockPersonRepository)
+	apiAdapter := new(mockAPIAdapter)
 	ctx := context.Background()
 	person := &domain.Person{ID: uuid.New(), Name: "John Doe"}
 
-	repositories.On("Person").Return(personRepo)
 	personRepo.On("UpdatePerson", mock.Anything, person).Return(nil)
 
-	service := app.NewPersonService(repositories, apiAdapter)
+	service := app.NewPersonService(personRepo, apiAdapter)
 	err := service.UpdatePerson(ctx, person)
 
 	require.NoError(t, err)
@@ -261,16 +225,14 @@ func TestPersonServiceUpdatePerson(t *testing.T) {
 }
 
 func TestPersonServiceDeletePerson(t *testing.T) {
-	repositories := new(mockRepositories)
-	apiAdapter := new(mockAPIAdapter)
 	personRepo := new(mockPersonRepository)
+	apiAdapter := new(mockAPIAdapter)
 	ctx := context.Background()
 	id := uuid.New()
 
-	repositories.On("Person").Return(personRepo)
 	personRepo.On("DeletePerson", mock.Anything, id).Return(nil)
 
-	service := app.NewPersonService(repositories, apiAdapter)
+	service := app.NewPersonService(personRepo, apiAdapter)
 	err := service.DeletePerson(ctx, id)
 
 	require.NoError(t, err)
@@ -278,9 +240,8 @@ func TestPersonServiceDeletePerson(t *testing.T) {
 }
 
 func TestPersonServiceEnrichPerson(t *testing.T) {
-	repositories := new(mockRepositories)
-	apiAdapter := new(mockAPIAdapter)
 	personRepo := new(mockPersonRepository)
+	apiAdapter := new(mockAPIAdapter)
 	ageService := new(mockAgeService)
 	genderService := new(mockGenderService)
 	nationalityService := new(mockNationalityService)
@@ -304,7 +265,6 @@ func TestPersonServiceEnrichPerson(t *testing.T) {
 		NationalityProbability: &nationalityProb,
 	}
 
-	repositories.On("Person").Return(personRepo)
 	apiAdapter.On("Age").Return(ageService)
 	apiAdapter.On("Gender").Return(genderService)
 	apiAdapter.On("Nationality").Return(nationalityService)
@@ -323,7 +283,7 @@ func TestPersonServiceEnrichPerson(t *testing.T) {
 			*p.NationalityProbability == nationalityProb
 	})).Return(nil)
 
-	service := app.NewPersonService(repositories, apiAdapter)
+	service := app.NewPersonService(personRepo, apiAdapter)
 	result, err := service.EnrichPerson(ctx, id)
 
 	require.NoError(t, err)
@@ -342,9 +302,8 @@ func TestPersonServiceEnrichPerson(t *testing.T) {
 }
 
 func TestPersonServiceEnrichPersonPartialFailure(t *testing.T) {
-	repositories := new(mockRepositories)
-	apiAdapter := new(mockAPIAdapter)
 	personRepo := new(mockPersonRepository)
+	apiAdapter := new(mockAPIAdapter)
 	ageService := new(mockAgeService)
 	genderService := new(mockGenderService)
 	nationalityService := new(mockNationalityService)
@@ -354,7 +313,6 @@ func TestPersonServiceEnrichPersonPartialFailure(t *testing.T) {
 	expectedGender := "male"
 	genderProb := 0.95
 
-	repositories.On("Person").Return(personRepo)
 	apiAdapter.On("Age").Return(ageService)
 	apiAdapter.On("Gender").Return(genderService)
 	apiAdapter.On("Nationality").Return(nationalityService)
@@ -374,7 +332,7 @@ func TestPersonServiceEnrichPersonPartialFailure(t *testing.T) {
 			p.NationalityProbability == nil
 	})).Return(nil)
 
-	service := app.NewPersonService(repositories, apiAdapter)
+	service := app.NewPersonService(personRepo, apiAdapter)
 	result, err := service.EnrichPerson(ctx, id)
 
 	require.NoError(t, err)

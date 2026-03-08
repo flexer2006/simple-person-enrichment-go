@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/flexer2006/case-person-enrichment-go/internal/database/postgres"
+	"github.com/flexer2006/case-person-enrichment-go/internal/logger"
 	repoports "github.com/flexer2006/case-person-enrichment-go/internal/service/ports"
-	"github.com/flexer2006/case-person-enrichment-go/pkg/database/postgres"
-	"github.com/flexer2006/case-person-enrichment-go/pkg/logger"
 	"go.uber.org/zap"
 )
 

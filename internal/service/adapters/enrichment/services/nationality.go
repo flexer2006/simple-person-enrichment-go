@@ -1,4 +1,3 @@
-// Package nationality предоставляет реализацию интерфейса nationality.Service для получения национальности по имени.
 package api
 
 import (
@@ -8,8 +7,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/flexer2006/case-person-enrichment-go/internal/logger"
 	nationalitymodels "github.com/flexer2006/case-person-enrichment-go/internal/service/domain"
-	"github.com/flexer2006/case-person-enrichment-go/pkg/logger"
 	"go.uber.org/zap"
 )
 

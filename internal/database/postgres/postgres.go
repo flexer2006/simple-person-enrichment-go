@@ -7,7 +7,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/flexer2006/case-person-enrichment-go/pkg/logger"
+	"github.com/flexer2006/case-person-enrichment-go/internal/logger"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 )

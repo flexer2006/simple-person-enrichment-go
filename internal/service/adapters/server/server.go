@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/flexer2006/case-person-enrichment-go/internal/logger"
 	"github.com/flexer2006/case-person-enrichment-go/internal/service/domain"
 	"github.com/flexer2006/case-person-enrichment-go/internal/service/ports"
-	"github.com/flexer2006/case-person-enrichment-go/pkg/logger"
 	"github.com/gofiber/fiber/v3"
 	"go.uber.org/zap"
 

@@ -1,22 +1,16 @@
 package server
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/flexer2006/case-person-enrichment-go/internal/logger"
 	"github.com/flexer2006/case-person-enrichment-go/internal/service/domain"
 	"github.com/flexer2006/case-person-enrichment-go/internal/service/ports"
-	"github.com/flexer2006/case-person-enrichment-go/pkg/logger"
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
-)
-
-var (
-	ErrNameSurnameRequired = errors.New("name and surname are required")
-	ErrPersonNotFound      = errors.New("person not found")
 )
 
 type PersonHandler struct {
@@ -52,7 +46,6 @@ func (h *PersonHandler) GetPersons(ctx fiber.Ctx) error {
 	requestCtx := ctx.Context()
 	logger.Debug(requestCtx, "handling get persons request")
 
-	// Извлечение параметров пагинации
 	limitStr := ctx.Query("limit", "10")
 	offsetStr := ctx.Query("offset", "0")
 
@@ -79,7 +72,7 @@ func (h *PersonHandler) GetPersons(ctx fiber.Ctx) error {
 		}
 	}
 
-	persons, total, err := h.repositories.Person().GetPersons(requestCtx, filter, offset, limit)
+	persons, total, err := h.repositories.GetPersons(requestCtx, filter, offset, limit)
 	if err != nil {
 		logger.Error(requestCtx, "failed to get persons", zap.Error(err))
 		if err := ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -129,7 +122,7 @@ func (h *PersonHandler) GetPersonByID(ctx fiber.Ctx) error {
 		return fmt.Errorf("invalid UUID format: %w", err)
 	}
 
-	person, err := h.repositories.Person().GetByID(requestCtx, personID)
+	person, err := h.repositories.GetByID(requestCtx, personID)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			if err := ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -184,14 +177,14 @@ func (h *PersonHandler) CreatePerson(ctx fiber.Ctx) error {
 		}); err != nil {
 			return fmt.Errorf("failed to send JSON response: %w", err)
 		}
-		return fmt.Errorf("%w", ErrNameSurnameRequired)
+		return fmt.Errorf("%w", domain.ErrNameSurnameRequired)
 	}
 
 	if person.ID == uuid.Nil {
 		person.ID = uuid.New()
 	}
 
-	if err := h.repositories.Person().CreatePerson(requestCtx, &person); err != nil {
+	if err := h.repositories.CreatePerson(requestCtx, &person); err != nil {
 		logger.Error(requestCtx, "failed to create person", zap.Error(err))
 		if err := ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to create person",
@@ -236,7 +229,7 @@ func (h *PersonHandler) UpdatePerson(ctx fiber.Ctx) error {
 		return fmt.Errorf("invalid UUID format: %w", err)
 	}
 
-	exists, err := h.repositories.Person().ExistsByID(requestCtx, personID)
+	exists, err := h.repositories.ExistsByID(requestCtx, personID)
 	if err != nil {
 		logger.Error(requestCtx, "failed to check if person exists", zap.Error(err))
 		if err := ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -253,7 +246,7 @@ func (h *PersonHandler) UpdatePerson(ctx fiber.Ctx) error {
 		}); err != nil {
 			return fmt.Errorf("failed to send JSON response: %w", err)
 		}
-		return fmt.Errorf("%w", ErrPersonNotFound)
+		return fmt.Errorf("%w", domain.ErrPersonNotFound)
 	}
 
 	var person domain.Person
@@ -274,10 +267,10 @@ func (h *PersonHandler) UpdatePerson(ctx fiber.Ctx) error {
 		}); err != nil {
 			return fmt.Errorf("failed to send JSON response: %w", err)
 		}
-		return fmt.Errorf("%w", ErrNameSurnameRequired)
+		return fmt.Errorf("%w", domain.ErrNameSurnameRequired)
 	}
 
-	if err := h.repositories.Person().UpdatePerson(requestCtx, &person); err != nil {
+	if err := h.repositories.UpdatePerson(requestCtx, &person); err != nil {
 		logger.Error(requestCtx, "failed to update person", zap.Error(err))
 		if err := ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update person",
@@ -321,7 +314,7 @@ func (h *PersonHandler) DeletePerson(ctx fiber.Ctx) error {
 		return fmt.Errorf("invalid UUID format: %w", err)
 	}
 
-	if err := h.repositories.Person().DeletePerson(requestCtx, personID); err != nil {
+	if err := h.repositories.DeletePerson(requestCtx, personID); err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			if err := ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"error": "Person not found",
@@ -373,7 +366,7 @@ func (h *PersonHandler) EnrichPerson(ctx fiber.Ctx) error {
 		return fmt.Errorf("invalid UUID format: %w", err)
 	}
 
-	person, err := h.repositories.Person().GetByID(requestCtx, personID)
+	person, err := h.repositories.GetByID(requestCtx, personID)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			if err := ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -430,7 +423,7 @@ func (h *PersonHandler) EnrichPerson(ctx fiber.Ctx) error {
 		}
 	}
 
-	err = h.repositories.Person().UpdatePerson(requestCtx, person)
+	err = h.repositories.UpdatePerson(requestCtx, person)
 	if err != nil {
 		logger.Error(requestCtx, "failed to save enriched data", zap.Error(err))
 		if err := ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

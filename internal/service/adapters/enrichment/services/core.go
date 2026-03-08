@@ -1,4 +1,3 @@
-// Package api объединяет все адаптеры для взаимодействия с внешними API.
 package api
 
 import (

@@ -4,18 +4,17 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/signal"
 	"strings"
-	"syscall"
 	"time"
 
+	"github.com/flexer2006/case-person-enrichment-go/internal/config"
+	"github.com/flexer2006/case-person-enrichment-go/internal/database"
+	"github.com/flexer2006/case-person-enrichment-go/internal/database/migrate"
+	"github.com/flexer2006/case-person-enrichment-go/internal/database/postgres"
+	"github.com/flexer2006/case-person-enrichment-go/internal/logger"
 	"github.com/flexer2006/case-person-enrichment-go/internal/service/app"
 	"github.com/flexer2006/case-person-enrichment-go/internal/service/domain"
-	"github.com/flexer2006/case-person-enrichment-go/pkg/config"
-	"github.com/flexer2006/case-person-enrichment-go/pkg/database"
-	"github.com/flexer2006/case-person-enrichment-go/pkg/database/migrate"
-	"github.com/flexer2006/case-person-enrichment-go/pkg/database/postgres"
-	"github.com/flexer2006/case-person-enrichment-go/pkg/logger"
+	"github.com/flexer2006/case-person-enrichment-go/internal/shutdown"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -132,12 +131,12 @@ func main() {
 		appCtx, appCancel := context.WithCancel(ctx)
 		defer appCancel()
 
-		stopCh := make(chan os.Signal, 1)
-		signal.Notify(stopCh, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
-
-		errChan := make(chan error, 1)
 		go func() {
-			errChan <- application.Start(appCtx)
+			if err := application.Start(appCtx); err != nil {
+				logger.Error(ctx, "application stopped with error", zap.Error(err))
+				exitCode = 1
+				appCancel()
+			}
 		}()
 
 		logger.Info(ctx, "service started",
@@ -153,30 +152,19 @@ func main() {
 			})),
 		)
 
-		var sig os.Signal
-		select {
-		case err := <-errChan:
-			if err != nil {
-				logger.Error(ctx, "application stopped with error", zap.Error(err))
-				exitCode = 1
-			}
-		case sig = <-stopCh:
-			logger.Info(ctx, "received shutdown signal", zap.String("signal", sig.String()))
+		if err := shutdown.Wait(ctx, shutdownTimeout,
+			func(ctx context.Context) error {
+				appCancel()
+				return application.Stop(ctx)
+			},
+			func(ctx context.Context) error {
+				logger.Info(ctx, "closing database connection")
+				data.Close(ctx)
+				return nil
+			},
+		); err != nil {
+			logger.Error(ctx, "shutdown hooks returned error", zap.Error(err))
 		}
-
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), shutdownTimeout)
-		defer shutdownCancel()
-
-		appCancel()
-
-		if err := application.Stop(shutdownCtx); err != nil {
-			logger.Error(ctx, "error stopping application", zap.Error(err))
-			exitCode = 1
-		}
-
-		logger.Info(ctx, "closing database connection")
-		data.Close(shutdownCtx)
-
 		logger.Info(ctx, "service shutdown complete")
 	}()
 

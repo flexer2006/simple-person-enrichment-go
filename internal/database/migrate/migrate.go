@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/flexer2006/case-person-enrichment-go/pkg/logger"
+	"github.com/flexer2006/case-person-enrichment-go/internal/logger"
 	"github.com/golang-migrate/migrate/v4"
 
 	// Импортируем драйвер для работы с Postgres.

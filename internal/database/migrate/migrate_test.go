@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/flexer2006/case-person-enrichment-go/pkg/database/migrate"
+	"github.com/flexer2006/case-person-enrichment-go/internal/database/migrate"
 	"github.com/stretchr/testify/assert"
 )
 

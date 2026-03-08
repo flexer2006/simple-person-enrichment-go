@@ -8,19 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/flexer2006/case-person-enrichment-go/internal/database/postgres"
+	"github.com/flexer2006/case-person-enrichment-go/internal/logger"
 	"github.com/flexer2006/case-person-enrichment-go/internal/service/domain"
-	"github.com/flexer2006/case-person-enrichment-go/pkg/database/postgres"
-	"github.com/flexer2006/case-person-enrichment-go/pkg/logger"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"go.uber.org/zap"
-)
-
-var (
-	ErrPersonNotFound      = errors.New("person not found")
-	ErrPersonAlreadyExists = errors.New("person already exists")
 )
 
 type Repository struct {
@@ -69,7 +64,7 @@ func (r *Repository) GetByID(ctx context.Context, personID uuid.UUID) (*domain.P
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			logger.Debug(ctx, "person not found", zap.String("id", personID.String()))
-			return nil, fmt.Errorf("%w: id %s", ErrPersonNotFound, personID)
+			return nil, fmt.Errorf("%w: id %s", domain.ErrPersonNotFound, personID)
 		}
 		logger.Error(ctx, "failed to get person by ID", zap.Error(err))
 		return nil, fmt.Errorf("failed to get person: %w", err)
@@ -255,7 +250,7 @@ func (r *Repository) CreatePerson(ctx context.Context, person *domain.Person) er
 			logger.Error(ctx, "person with this ID already exists",
 				zap.String("id", person.ID.String()),
 				zap.Error(err))
-			return fmt.Errorf("%w: ID %s", ErrPersonAlreadyExists, person.ID)
+			return fmt.Errorf("%w: ID %s", domain.ErrPersonAlreadyExists, person.ID)
 		}
 		logger.Error(ctx, "failed to create person", zap.Error(err))
 		return fmt.Errorf("failed to create person: %w", err)
@@ -297,7 +292,7 @@ func (r *Repository) UpdatePerson(ctx context.Context, person *domain.Person) er
 
 	if result.RowsAffected() == 0 {
 		logger.Error(ctx, "person not found for update", zap.String("id", person.ID.String()))
-		return fmt.Errorf("%w: id %s", ErrPersonNotFound, person.ID)
+		return fmt.Errorf("%w: id %s", domain.ErrPersonNotFound, person.ID)
 	}
 
 	return nil
@@ -316,7 +311,7 @@ func (r *Repository) DeletePerson(ctx context.Context, personID uuid.UUID) error
 
 	if result.RowsAffected() == 0 {
 		logger.Debug(ctx, "person not found for deletion", zap.String("id", personID.String()))
-		return fmt.Errorf("%w: id %s", ErrPersonNotFound, personID)
+		return fmt.Errorf("%w: id %s", domain.ErrPersonNotFound, personID)
 	}
 
 	return nil

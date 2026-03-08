@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/flexer2006/case-person-enrichment-go/internal/database/migrate"
+	pgadapter "github.com/flexer2006/case-person-enrichment-go/internal/database/postgres"
+	"github.com/flexer2006/case-person-enrichment-go/internal/logger"
 	"github.com/flexer2006/case-person-enrichment-go/internal/service/adapters/enrichment"
 	"github.com/flexer2006/case-person-enrichment-go/internal/service/adapters/postgres"
 	"github.com/flexer2006/case-person-enrichment-go/internal/service/adapters/server"
 	"github.com/flexer2006/case-person-enrichment-go/internal/service/domain"
 	"github.com/flexer2006/case-person-enrichment-go/internal/service/ports"
-	"github.com/flexer2006/case-person-enrichment-go/pkg/database/migrate"
-	pgadapter "github.com/flexer2006/case-person-enrichment-go/pkg/database/postgres"
-	"github.com/flexer2006/case-person-enrichment-go/pkg/logger"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -111,10 +111,12 @@ func (a *Application) Stop(ctx context.Context) error {
 	return nil
 }
 
+// Repositories returns the application's storage interface.
 func (a *Application) Repositories() ports.Repositories {
 	return a.repositories
 }
 
+// API returns the external API adapter.
 func (a *Application) API() ports.API {
 	return a.apiAdapter
 }
@@ -123,6 +125,10 @@ func (a *Application) PersonService() *personServiceImpl {
 	return a.personService
 }
 
+// personServiceImpl handles domain-specific operations using the
+// storage and API adapters. The flattened Repositories interface makes it
+// easy to call storage methods directly without the previous nested
+// Person() accessor.
 func NewPersonService(repositories ports.Repositories, apiAdapter ports.API) *personServiceImpl {
 	return &personServiceImpl{
 		repositories: repositories,
@@ -136,7 +142,7 @@ type personServiceImpl struct {
 }
 
 func (s *personServiceImpl) GetByID(ctx context.Context, id uuid.UUID) (*domain.Person, error) {
-	person, err := s.repositories.Person().GetByID(ctx, id)
+	person, err := s.repositories.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get person by ID: %w", err)
 	}
@@ -144,7 +150,7 @@ func (s *personServiceImpl) GetByID(ctx context.Context, id uuid.UUID) (*domain.
 }
 
 func (s *personServiceImpl) GetPersons(ctx context.Context, filter map[string]any, offset, limit int) ([]*domain.Person, int, error) {
-	persons, count, err := s.repositories.Person().GetPersons(ctx, filter, offset, limit)
+	persons, count, err := s.repositories.GetPersons(ctx, filter, offset, limit)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to get persons: %w", err)
 	}
@@ -152,21 +158,21 @@ func (s *personServiceImpl) GetPersons(ctx context.Context, filter map[string]an
 }
 
 func (s *personServiceImpl) CreatePerson(ctx context.Context, person *domain.Person) error {
-	if err := s.repositories.Person().CreatePerson(ctx, person); err != nil {
+	if err := s.repositories.CreatePerson(ctx, person); err != nil {
 		return fmt.Errorf("failed to create person: %w", err)
 	}
 	return nil
 }
 
 func (s *personServiceImpl) UpdatePerson(ctx context.Context, person *domain.Person) error {
-	if err := s.repositories.Person().UpdatePerson(ctx, person); err != nil {
+	if err := s.repositories.UpdatePerson(ctx, person); err != nil {
 		return fmt.Errorf("failed to update person: %w", err)
 	}
 	return nil
 }
 
 func (s *personServiceImpl) DeletePerson(ctx context.Context, id uuid.UUID) error {
-	if err := s.repositories.Person().DeletePerson(ctx, id); err != nil {
+	if err := s.repositories.DeletePerson(ctx, id); err != nil {
 		return fmt.Errorf("failed to delete person: %w", err)
 	}
 	return nil
@@ -175,7 +181,7 @@ func (s *personServiceImpl) DeletePerson(ctx context.Context, id uuid.UUID) erro
 func (s *personServiceImpl) EnrichPerson(ctx context.Context, id uuid.UUID) (*domain.Person, error) {
 	logger.Debug(ctx, "enriching person data", zap.String("id", id.String()))
 
-	person, err := s.repositories.Person().GetByID(ctx, id)
+	person, err := s.repositories.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get person: %w", err)
 	}
@@ -209,7 +215,7 @@ func (s *personServiceImpl) EnrichPerson(ctx context.Context, id uuid.UUID) (*do
 		}
 	}
 
-	err = s.repositories.Person().UpdatePerson(ctx, person)
+	err = s.repositories.UpdatePerson(ctx, person)
 	if err != nil {
 		return nil, fmt.Errorf("failed to save enriched person data: %w", err)
 	}

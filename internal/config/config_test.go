@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/flexer2006/case-person-enrichment-go/pkg/config"
-	"github.com/flexer2006/case-person-enrichment-go/pkg/logger"
+	"github.com/flexer2006/case-person-enrichment-go/internal/config"
+	"github.com/flexer2006/case-person-enrichment-go/internal/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"

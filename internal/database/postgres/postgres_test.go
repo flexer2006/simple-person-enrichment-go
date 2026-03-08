@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/flexer2006/case-person-enrichment-go/pkg/database/postgres"
+	"github.com/flexer2006/case-person-enrichment-go/internal/database/postgres"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

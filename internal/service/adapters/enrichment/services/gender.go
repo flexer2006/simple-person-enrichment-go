@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/flexer2006/case-person-enrichment-go/internal/logger"
 	domain "github.com/flexer2006/case-person-enrichment-go/internal/service/domain"
-	"github.com/flexer2006/case-person-enrichment-go/pkg/logger"
 	"go.uber.org/zap"
 )
 
