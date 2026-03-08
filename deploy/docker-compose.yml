@@ -1,5 +1,8 @@
 version: '3.8'
 
+env_file:
+  - ../.env
+
 services:
   postgres:
     build:
@@ -27,22 +30,18 @@ services:
       context: ..
       dockerfile: containers/docker/go.Dockerfile
     environment:
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=postgres   
+      - POSTGRES_PORT=5432       
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_SSLMODE=${POSTGRES_SSLMODE}
-      - POSTGRES_CONNECT_RETRIES=${POSTGRES_CONNECT_RETRIES}
-      - POSTGRES_CONNECT_RETRY_INTERVAL=${POSTGRES_CONNECT_RETRY_INTERVAL}
-      - HTTP_PORT=${HTTP_PORT}
-      - HTTP_HOST=0.0.0.0
       - HTTP_READ_TIMEOUT=${HTTP_READ_TIMEOUT}
       - HTTP_WRITE_TIMEOUT=${HTTP_WRITE_TIMEOUT}
-      - MIGRATIONS_DIR=/app/migrations
       - LOGGER_LEVEL=${LOGGER_LEVEL}
       - LOGGER_FORMAT=${LOGGER_FORMAT}
       - LOGGER_MODEL=${LOGGER_MODEL}
+      - MIGRATIONS_DIR=/app/migrations
     depends_on:
       postgres:
         condition: service_healthy
