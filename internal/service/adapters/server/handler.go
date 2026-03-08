@@ -67,34 +67,27 @@ func NewPersonHandler(api ports.API, repositories ports.Repositories) *PersonHan
 // @Router /persons [get]
 func (h *PersonHandler) GetPersons(ctx fiber.Ctx) error {
 	requestCtx := ctx.Context()
-	logger.Debug(requestCtx, "handling get persons request")
-
 	limitStr := ctx.Query("limit", "10")
 	offsetStr := ctx.Query("offset", "0")
-
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil || limit <= 0 {
 		limit = 10
 	}
-
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil || offset < 0 {
 		offset = 0
 	}
-
 	filter := make(map[string]any)
 	for _, field := range []string{"name", "surname", "patronymic", "gender", "nationality"} {
 		if value := ctx.Query(field); value != "" {
 			filter[field] = value
 		}
 	}
-
 	if ageStr := ctx.Query("age"); ageStr != "" {
 		if age, err := strconv.Atoi(ageStr); err == nil {
 			filter["age"] = age
 		}
 	}
-
 	persons, total, err := h.repositories.GetPersons(requestCtx, filter, offset, limit)
 	if err != nil {
 		logger.Error(requestCtx, "failed to get persons", zap.Error(err))
@@ -103,7 +96,6 @@ func (h *PersonHandler) GetPersons(ctx fiber.Ctx) error {
 		}
 		return fmt.Errorf("failed to get persons: %w", err)
 	}
-
 	if err := sendJSONResponse(ctx, fiber.StatusOK, fiber.Map{
 		"data":   persons,
 		"total":  total,
@@ -129,10 +121,6 @@ func (h *PersonHandler) GetPersons(ctx fiber.Ctx) error {
 // @Router /persons/{id} [get]
 func (h *PersonHandler) GetPersonByID(ctx fiber.Ctx) error {
 	requestCtx := ctx.Context()
-	idParam := ctx.Params("id")
-
-	logger.Debug(requestCtx, "handling get person by ID request", zap.String("id", idParam))
-
 	personID, err := parseUUIDParam(ctx, "id")
 	if err != nil {
 		if err := sendError(ctx, fiber.StatusBadRequest, "Invalid UUID format"); err != nil {
@@ -140,7 +128,6 @@ func (h *PersonHandler) GetPersonByID(ctx fiber.Ctx) error {
 		}
 		return fmt.Errorf("invalid UUID format: %w", err)
 	}
-
 	person, err := h.repositories.GetByID(requestCtx, personID)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
@@ -154,7 +141,6 @@ func (h *PersonHandler) GetPersonByID(ctx fiber.Ctx) error {
 		}
 		return fmt.Errorf("failed to get person: %w", err)
 	}
-
 	if err := sendJSONResponse(ctx, fiber.StatusOK, person); err != nil {
 		return err
 	}
@@ -174,8 +160,6 @@ func (h *PersonHandler) GetPersonByID(ctx fiber.Ctx) error {
 // @Router /persons [post]
 func (h *PersonHandler) CreatePerson(ctx fiber.Ctx) error {
 	requestCtx := ctx.Context()
-	logger.Debug(requestCtx, "handling create person request")
-
 	var person domain.Person
 	if err := ctx.Bind().Body(&person); err != nil {
 		if err := sendError(ctx, fiber.StatusBadRequest, "Invalid request body"); err != nil {
@@ -183,18 +167,15 @@ func (h *PersonHandler) CreatePerson(ctx fiber.Ctx) error {
 		}
 		return fmt.Errorf("invalid request body: %w", err)
 	}
-
 	if person.Name == "" || person.Surname == "" {
 		if err := sendError(ctx, fiber.StatusBadRequest, "Name and surname are required"); err != nil {
 			return err
 		}
 		return fmt.Errorf("%w", domain.ErrNameSurnameRequired)
 	}
-
 	if person.ID == uuid.Nil {
 		person.ID = uuid.New()
 	}
-
 	if err := h.repositories.CreatePerson(requestCtx, &person); err != nil {
 		logger.Error(requestCtx, "failed to create person", zap.Error(err))
 		if err := sendError(ctx, fiber.StatusInternalServerError, "Failed to create person"); err != nil {
@@ -202,7 +183,6 @@ func (h *PersonHandler) CreatePerson(ctx fiber.Ctx) error {
 		}
 		return fmt.Errorf("failed to create person: %w", err)
 	}
-
 	if err := sendJSONResponse(ctx, fiber.StatusCreated, person); err != nil {
 		return err
 	}
@@ -224,10 +204,6 @@ func (h *PersonHandler) CreatePerson(ctx fiber.Ctx) error {
 // @Router /persons/{id} [put]
 func (h *PersonHandler) UpdatePerson(ctx fiber.Ctx) error {
 	requestCtx := ctx.Context()
-	idParam := ctx.Params("id")
-
-	logger.Debug(requestCtx, "handling update person request", zap.String("id", idParam))
-
 	personID, err := parseUUIDParam(ctx, "id")
 	if err != nil {
 		if err := sendError(ctx, fiber.StatusBadRequest, "Invalid UUID format"); err != nil {
@@ -235,7 +211,6 @@ func (h *PersonHandler) UpdatePerson(ctx fiber.Ctx) error {
 		}
 		return fmt.Errorf("invalid UUID format: %w", err)
 	}
-
 	exists, err := h.repositories.ExistsByID(requestCtx, personID)
 	if err != nil {
 		logger.Error(requestCtx, "failed to check if person exists", zap.Error(err))
@@ -244,14 +219,12 @@ func (h *PersonHandler) UpdatePerson(ctx fiber.Ctx) error {
 		}
 		return fmt.Errorf("failed to check if person exists: %w", err)
 	}
-
 	if !exists {
 		if err := sendError(ctx, fiber.StatusNotFound, "Person not found"); err != nil {
 			return err
 		}
 		return fmt.Errorf("%w", domain.ErrPersonNotFound)
 	}
-
 	var person domain.Person
 	if err := ctx.Bind().Body(&person); err != nil {
 		if err := sendError(ctx, fiber.StatusBadRequest, "Invalid request body"); err != nil {
@@ -259,16 +232,13 @@ func (h *PersonHandler) UpdatePerson(ctx fiber.Ctx) error {
 		}
 		return fmt.Errorf("invalid request body: %w", err)
 	}
-
 	person.ID = personID
-
 	if person.Name == "" || person.Surname == "" {
 		if err := sendError(ctx, fiber.StatusBadRequest, "Name and surname are required"); err != nil {
 			return err
 		}
 		return fmt.Errorf("%w", domain.ErrNameSurnameRequired)
 	}
-
 	if err := h.repositories.UpdatePerson(requestCtx, &person); err != nil {
 		logger.Error(requestCtx, "failed to update person", zap.Error(err))
 		if err := sendError(ctx, fiber.StatusInternalServerError, "Failed to update person"); err != nil {
@@ -276,7 +246,6 @@ func (h *PersonHandler) UpdatePerson(ctx fiber.Ctx) error {
 		}
 		return fmt.Errorf("failed to update person: %w", err)
 	}
-
 	if err := sendJSONResponse(ctx, fiber.StatusOK, person); err != nil {
 		return err
 	}
@@ -297,10 +266,6 @@ func (h *PersonHandler) UpdatePerson(ctx fiber.Ctx) error {
 // @Router /persons/{id} [delete]
 func (h *PersonHandler) DeletePerson(ctx fiber.Ctx) error {
 	requestCtx := ctx.Context()
-	idParam := ctx.Params("id")
-
-	logger.Debug(requestCtx, "handling delete person request", zap.String("id", idParam))
-
 	personID, err := parseUUIDParam(ctx, "id")
 	if err != nil {
 		if err := sendError(ctx, fiber.StatusBadRequest, "Invalid UUID format"); err != nil {
@@ -308,7 +273,6 @@ func (h *PersonHandler) DeletePerson(ctx fiber.Ctx) error {
 		}
 		return fmt.Errorf("invalid UUID format: %w", err)
 	}
-
 	if err := h.repositories.DeletePerson(requestCtx, personID); err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			if err := sendError(ctx, fiber.StatusNotFound, "Person not found"); err != nil {
@@ -322,7 +286,6 @@ func (h *PersonHandler) DeletePerson(ctx fiber.Ctx) error {
 		}
 		return fmt.Errorf("failed to delete person: %w", err)
 	}
-
 	if err := ctx.SendStatus(fiber.StatusNoContent); err != nil {
 		return fmt.Errorf("failed to send status: %w", err)
 	}
@@ -343,10 +306,6 @@ func (h *PersonHandler) DeletePerson(ctx fiber.Ctx) error {
 // @Router /persons/{id}/enrich [post]
 func (h *PersonHandler) EnrichPerson(ctx fiber.Ctx) error {
 	requestCtx := ctx.Context()
-	idParam := ctx.Params("id")
-
-	logger.Debug(requestCtx, "handling enrich person request", zap.String("id", idParam))
-
 	personID, err := parseUUIDParam(ctx, "id")
 	if err != nil {
 		if err := sendError(ctx, fiber.StatusBadRequest, "Invalid UUID format"); err != nil {
@@ -354,7 +313,6 @@ func (h *PersonHandler) EnrichPerson(ctx fiber.Ctx) error {
 		}
 		return fmt.Errorf("invalid UUID format: %w", err)
 	}
-
 	person, err := h.repositories.GetByID(requestCtx, personID)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
@@ -369,7 +327,6 @@ func (h *PersonHandler) EnrichPerson(ctx fiber.Ctx) error {
 		}
 		return fmt.Errorf("failed to get person: %w", err)
 	}
-
 	if person.Age == nil {
 		age, probability, err := h.api.Age().GetAgeByName(requestCtx, person.Name)
 		if err == nil {
@@ -381,7 +338,6 @@ func (h *PersonHandler) EnrichPerson(ctx fiber.Ctx) error {
 			logger.Warn(requestCtx, "failed to get age data", zap.Error(err))
 		}
 	}
-
 	if person.Gender == nil {
 		gender, probability, err := h.api.Gender().GetGenderByName(requestCtx, person.Name)
 		if err == nil {
@@ -394,7 +350,6 @@ func (h *PersonHandler) EnrichPerson(ctx fiber.Ctx) error {
 			logger.Warn(requestCtx, "failed to get gender data", zap.Error(err))
 		}
 	}
-
 	if person.Nationality == nil {
 		nationality, probability, err := h.api.Nationality().GetNationalityByName(requestCtx, person.Name)
 		if err == nil {
@@ -407,7 +362,6 @@ func (h *PersonHandler) EnrichPerson(ctx fiber.Ctx) error {
 			logger.Warn(requestCtx, "failed to get nationality data", zap.Error(err))
 		}
 	}
-
 	err = h.repositories.UpdatePerson(requestCtx, person)
 	if err != nil {
 		logger.Error(requestCtx, "failed to save enriched data", zap.Error(err))
@@ -416,7 +370,6 @@ func (h *PersonHandler) EnrichPerson(ctx fiber.Ctx) error {
 		}
 		return fmt.Errorf("failed to save enriched data: %w", err)
 	}
-
 	if err := sendJSONResponse(ctx, fiber.StatusOK, person); err != nil {
 		return err
 	}

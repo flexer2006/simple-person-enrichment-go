@@ -1,13 +1,9 @@
 package api
 
-import (
-	"github.com/flexer2006/case-person-enrichment-go/internal/service/ports"
-)
+import "github.com/flexer2006/case-person-enrichment-go/internal/service/ports"
 
 type ageSvc = ports.AgeAPI
-
 type genderSvc = ports.GenderAPI
-
 type nationalitySvc = ports.NationalityAPI
 
 type API struct {

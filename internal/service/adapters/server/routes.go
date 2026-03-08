@@ -8,9 +8,7 @@ import (
 
 func Setup(app *fiber.App, api ports.API, repositories ports.Repositories) {
 	personHandler := NewPersonHandler(api, repositories)
-
 	v1 := app.Group("/api/v1")
-
 	persons := v1.Group("/persons")
 	persons.Get("/", personHandler.GetPersons)
 	persons.Get("/:id", personHandler.GetPersonByID)

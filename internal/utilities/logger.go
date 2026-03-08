@@ -38,7 +38,6 @@ func Global() *Logger {
 	if lg != nil {
 		return lg
 	}
-
 	once.Do(func() {
 		l, err := NewProduction()
 		if err != nil {
@@ -48,7 +47,6 @@ func Global() *Logger {
 		global = l
 		globalMu.Unlock()
 	})
-
 	return global
 }
 
@@ -62,8 +60,7 @@ func SetGlobal(l *Logger) {
 }
 
 func NewDevelopment() (*Logger, error) {
-	cfg := zap.NewDevelopmentConfig()
-	zapLogger, err := cfg.Build()
+	zapLogger, err := zap.NewDevelopmentConfig().Build()
 	if err != nil {
 		return nil, err
 	}
@@ -71,8 +68,7 @@ func NewDevelopment() (*Logger, error) {
 }
 
 func NewProduction() (*Logger, error) {
-	cfg := zap.NewProductionConfig()
-	zapLogger, err := cfg.Build()
+	zapLogger, err := zap.NewProductionConfig().Build()
 	if err != nil {
 		return nil, err
 	}
@@ -82,17 +78,13 @@ func NewProduction() (*Logger, error) {
 func NewConsole(level LogLevel, json bool) *Logger {
 	encCfg := zap.NewProductionEncoderConfig()
 	encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
-
 	var enc zapcore.Encoder
 	if json {
 		enc = zapcore.NewJSONEncoder(encCfg)
 	} else {
 		enc = zapcore.NewConsoleEncoder(encCfg)
 	}
-
-	atomic := zap.NewAtomicLevelAt(zapcore.Level(level))
-	core := zapcore.NewCore(enc, zapcore.AddSync(os.Stdout), atomic)
-	return &Logger{zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))}
+	return &Logger{zap.New(zapcore.NewCore(enc, zapcore.AddSync(os.Stdout), zap.NewAtomicLevelAt(zapcore.Level(level))), zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))}
 }
 
 func (l *Logger) With(fields ...zap.Field) *Logger {

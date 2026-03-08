@@ -30,7 +30,3 @@ func (e *Enrichment) Gender() apiports.GenderAPI {
 func (e *Enrichment) Nationality() apiports.NationalityAPI {
 	return e.impl.Nationality()
 }
-
-// Person enrichment was previously part of the bundled API
-// interface, but the service layer now owns person-related logic.
-// We keep this adapter around only for the three external clients.

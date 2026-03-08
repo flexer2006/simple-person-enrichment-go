@@ -23,21 +23,16 @@ func New(ctx context.Context, cfg Config) (*Database, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup database: %w", err)
 	}
-
-	migrator := NewMig(cfg.Migrate)
-
 	db := &Database{
 		provider: postgresDB,
-		migrator: migrator,
+		migrator: NewMig(cfg.Migrate),
 	}
-
 	if cfg.ApplyMigrations {
 		if err := db.ApplyMigrations(ctx); err != nil {
 			db.Close(ctx)
 			return nil, err
 		}
 	}
-
 	return db, nil
 }
 
@@ -46,21 +41,16 @@ func NewWithDSN(ctx context.Context, dsn string, minConn, maxConn int, migration
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup database: %w", err)
 	}
-
-	migrator := NewMig(MigrateConfig{Path: migrationsPath})
-
 	db := &Database{
 		provider: postgresDB,
-		migrator: migrator,
+		migrator: NewMig(MigrateConfig{Path: migrationsPath}),
 	}
-
 	if applyMigrations {
 		if err := db.ApplyMigrations(ctx); err != nil {
 			db.Close(ctx)
 			return nil, err
 		}
 	}
-
 	return db, nil
 }
 
@@ -73,16 +63,14 @@ func (d *Database) Close(ctx context.Context) {
 }
 
 func (d *Database) ApplyMigrations(ctx context.Context) error {
-	dsn := d.provider.GetDSN()
-	if err := d.migrator.Up(ctx, dsn); err != nil {
+	if err := d.migrator.Up(ctx, d.provider.GetDSN()); err != nil {
 		return fmt.Errorf("failed to apply migrations: %w", err)
 	}
 	return nil
 }
 
 func (d *Database) RollbackMigrations(ctx context.Context) error {
-	dsn := d.provider.GetDSN()
-	if err := d.migrator.Down(ctx, dsn); err != nil {
+	if err := d.migrator.Down(ctx, d.provider.GetDSN()); err != nil {
 		return fmt.Errorf("failed to rollback migrations: %w", err)
 	}
 	return nil
@@ -93,8 +81,7 @@ func (d *Database) Provider() PostgresProvider {
 }
 
 func (d *Database) GetMigrationVersion(ctx context.Context) (uint, bool, error) {
-	dsn := d.provider.GetDSN()
-	version, dirty, err := d.migrator.Version(ctx, dsn)
+	version, dirty, err := d.migrator.Version(ctx, d.provider.GetDSN())
 	if err != nil {
 		return 0, false, fmt.Errorf("failed to get migration version: %w", err)
 	}

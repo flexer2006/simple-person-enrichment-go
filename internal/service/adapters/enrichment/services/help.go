@@ -1,8 +1,6 @@
 package api
 
-import (
-	"net/http"
-)
+import "net/http"
 
 type APIClient struct {
 	baseURL    string

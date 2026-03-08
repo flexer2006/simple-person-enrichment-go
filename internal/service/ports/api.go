@@ -1,8 +1,6 @@
 package ports
 
-import (
-	"context"
-)
+import "context"
 
 type AgeAPI interface {
 	GetAgeByName(ctx context.Context, name string) (int, float64, error)

@@ -38,19 +38,16 @@ func (m *Migrator) Up(ctx context.Context, dsn string) error {
 	if err != nil {
 		return err
 	}
-
 	migrator, err := migrate.New(path, dsn)
 	if err != nil {
 		utilities.Error(ctx, "failed to create migration instance", zap.Error(err), zap.String("path", path))
 		return fmt.Errorf("failed to create migration instance: %w", err)
 	}
 	defer m.close(ctx, migrator)
-
 	if err := migrator.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		utilities.Error(ctx, "failed to apply migrations", zap.Error(err))
 		return fmt.Errorf("failed to apply migrations: %w", err)
 	}
-
 	utilities.Info(ctx, "database migrations applied")
 	return nil
 }
@@ -60,19 +57,16 @@ func (m *Migrator) Down(ctx context.Context, dsn string) error {
 	if err != nil {
 		return err
 	}
-
 	migrator, err := migrate.New(path, dsn)
 	if err != nil {
 		utilities.Error(ctx, "failed to create migration instance", zap.Error(err), zap.String("path", path))
 		return fmt.Errorf("failed to create migration instance: %w", err)
 	}
 	defer m.close(ctx, migrator)
-
 	if err := migrator.Down(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		utilities.Error(ctx, "failed to rollback migrations", zap.Error(err))
 		return fmt.Errorf("failed to rollback migrations: %w", err)
 	}
-
 	utilities.Info(ctx, "database migrations rolled back")
 	return nil
 }
@@ -82,14 +76,12 @@ func (m *Migrator) Version(ctx context.Context, dsn string) (uint, bool, error) 
 	if err != nil {
 		return 0, false, err
 	}
-
 	migrator, err := migrate.New(path, dsn)
 	if err != nil {
 		utilities.Error(ctx, "failed to create migration instance", zap.Error(err), zap.String("path", path))
 		return 0, false, fmt.Errorf("failed to create migration instance: %w", err)
 	}
 	defer m.close(ctx, migrator)
-
 	version, dirty, err := migrator.Version()
 	if err != nil && !errors.Is(err, migrate.ErrNilVersion) {
 		utilities.Error(ctx, "failed to get migration version", zap.Error(err))

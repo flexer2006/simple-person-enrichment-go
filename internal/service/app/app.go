@@ -35,31 +35,22 @@ type Application struct {
 
 func NewApplication(ctx context.Context, config *domain.Config, database dbpkg.PostgresProvider, apiAdapter ports.API) (*Application, error) {
 	utilities.Info(ctx, "initializing application")
-
 	pgAdapter := postgres.NewPostgresAdapter(database)
-
 	if apiAdapter == nil {
 		apiAdapter = enrichment.NewDefaultEnrichment()
 	}
-
-	personSvc := NewPersonService(pgAdapter.Repositories(), apiAdapter)
-
-	httpServer := server.New(*config, apiAdapter, pgAdapter.Repositories())
-
 	app := &Application{
 		config:        config,
 		db:            database,
-		httpServer:    httpServer,
-		personService: personSvc,
+		httpServer:    server.New(*config, apiAdapter, pgAdapter.Repositories()),
+		personService: NewPersonService(pgAdapter.Repositories(), apiAdapter),
 	}
-
 	utilities.Info(ctx, "application initialized successfully")
 	return app, nil
 }
 
 func (a *Application) Start(ctx context.Context) error {
 	utilities.Info(ctx, "starting application")
-
 	if err := a.httpServer.Start(ctx); err != nil {
 		return fmt.Errorf("failed to start HTTP server: %w", err)
 	}
@@ -68,25 +59,20 @@ func (a *Application) Start(ctx context.Context) error {
 
 func (a *Application) Stop(ctx context.Context) error {
 	utilities.Info(ctx, "stopping application")
-
 	shutdownTimeout, err := time.ParseDuration(a.config.Graceful.ShutdownTimeout)
 	if err != nil {
 		shutdownTimeout = 5 * time.Second
 		utilities.Warn(ctx, "invalid graceful shutdown timeout, using default",
 			zap.String("default", shutdownTimeout.String()))
 	}
-
 	ctx, cancel := context.WithTimeout(ctx, shutdownTimeout)
 	defer cancel()
-
 	if err := a.httpServer.Stop(ctx); err != nil {
 		utilities.Error(ctx, "error stopping HTTP server", zap.Error(err))
 	}
-
 	if a.db != nil {
 		a.db.Close(ctx)
 	}
-
 	utilities.Info(ctx, "application stopped")
 	return nil
 }
@@ -145,46 +131,34 @@ func (s *personServiceImpl) DeletePerson(ctx context.Context, id uuid.UUID) erro
 }
 
 func (s *personServiceImpl) EnrichPerson(ctx context.Context, id uuid.UUID) (*domain.Person, error) {
-	utilities.Debug(ctx, "enriching person data", zap.String("id", id.String()))
-
 	person, err := s.repositories.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get person: %w", err)
 	}
-
 	if person.Age == nil {
-		age, _, err := s.apiAdapter.Age().GetAgeByName(ctx, person.Name)
-		if err == nil {
+		if age, _, err := s.apiAdapter.Age().GetAgeByName(ctx, person.Name); err == nil {
 			person.Age = &age
 		} else {
 			utilities.Warn(ctx, "failed to enrich with age data", zap.Error(err))
 		}
 	}
-
 	if person.Gender == nil {
-		gender, probability, err := s.apiAdapter.Gender().GetGenderByName(ctx, person.Name)
-		if err == nil {
-			person.Gender = &gender
-			person.GenderProbability = &probability
+		if gender, probability, err := s.apiAdapter.Gender().GetGenderByName(ctx, person.Name); err == nil {
+			person.Gender, person.GenderProbability = &gender, &probability
 		} else {
 			utilities.Warn(ctx, "failed to enrich with gender data", zap.Error(err))
 		}
 	}
-
 	if person.Nationality == nil {
 		nationality, probability, err := s.apiAdapter.Nationality().GetNationalityByName(ctx, person.Name)
 		if err == nil {
-			person.Nationality = &nationality
-			person.NationalityProbability = &probability
+			person.Nationality, person.NationalityProbability = &nationality, &probability
 		} else {
 			utilities.Warn(ctx, "failed to enrich with nationality data", zap.Error(err))
 		}
 	}
-
-	err = s.repositories.UpdatePerson(ctx, person)
-	if err != nil {
+	if err = s.repositories.UpdatePerson(ctx, person); err != nil {
 		return nil, fmt.Errorf("failed to save enriched person data: %w", err)
 	}
-
 	return person, nil
 }

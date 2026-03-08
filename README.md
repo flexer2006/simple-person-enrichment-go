@@ -1,12 +1,12 @@
-# Person Data Enrichment Service
+# Сервис расширения данных о персонах
 
-## Description
+## Описание
 
-This service is designed to store and enrich information about people. It allows creating, retrieving, updating and deleting records about individuals, as well as enriching their data with age, gender, and nationality using external APIs.
+Этот сервис предназначен для хранения и обогащения информации о людях. Он позволяет создавать, получать, обновлять и удалять записи о людях, а также обогащать их данные возрастом, полом и национальностью с помощью внешних API.
 
-## Service Launch
+## Запуск сервиса
 
-### Installation and Launch Using Docker
+### Установка и запуск с помощью Docker
 
 ```bash
 git clone https://github.com/flexer2006/case-person-enrichment-go.git
@@ -16,52 +16,52 @@ cd deploy
 docker-compose up -d
 ```
 
-After launch, the service will be available via Nginx at: `http://localhost:80`
+После запуска сервис будет доступен через Nginx по адресу: `http://localhost:80`
 
-## Configuration
+## Конфигурация
 
-The main settings are located in the .env file. A configuration example can be found in .env.example.
+Основные настройки находятся в файле `.env`. Пример конфигурации можно найти в `.env.example`.
 
-### Main Parameters
+### Основные параметры
 
-- **Database**: PostgreSQL connection settings
-- **HTTP Server**: Fiber parameters
-- **Nginx**: request proxying parameters
-- **Logging**: log settings
+- **База данных**: настройки подключения PostgreSQL
+- **HTTP-сервер**: параметры Fiber
+- **Nginx**: параметры проксирования запросов
+- **Логирование**: настройки логов
 
-## API Documentation
+## Документация API
 
 ### Swagger UI
 
-Interactive API documentation is available at: `http://localhost/swagger/swagger.html`
+Интерактивная документация API доступна по адресу: `http://localhost/swagger/swagger.html`
 
-## API Endpoints
+## Маршруты API
 
-### Base URL: `/api/v1`
+### Базовый URL: `/api/v1`
 
-| Method | Path                  | Description                                      |
+| Метод | Путь                  | Описание                                      |
 | ------ | --------------------- | ------------------------------------------------ |
-| GET    | `/persons`            | Get list of persons with filtering and pagination |
-| GET    | `/persons/:id`        | Get person by ID                                 |
-| POST   | `/persons`            | Create a new person                              |
-| PUT    | `/persons/:id`        | Update a person                                  |
-| PATCH  | `/persons/:id`        | Partially update a person                        |
-| DELETE | `/persons/:id`        | Delete a person                                  |
-| POST   | `/persons/:id/enrich` | Enrich person data                               |
+| GET    | `/persons`            | Получить список персон с фильтрацией и постраничной загрузкой |
+| GET    | `/persons/:id`        | Получить персону по ID                                 |
+| POST   | `/persons`            | Создать новую персону                              |
+| PUT    | `/persons/:id`        | Обновить персону                                  |
+| PATCH  | `/persons/:id`        | Частично обновить персону                        |
+| DELETE | `/persons/:id`        | Удалить персону                                  |
+| POST   | `/persons/:id/enrich` | Обогатить данные персоны                               |
 
-## API Usage Examples
+## Примеры использования API
 
-### 1. Getting a List of Persons with Filtering
+### 1. Получение списка персон с фильтрацией
 
 ```bash
-# Get all users (first 10).
+# Получить всех пользователей (первые 10).
 curl -X GET "http://localhost/api/v1/persons"
 
-# With filters applied.
+# С применением фильтров.
 curl -X GET "http://localhost/api/v1/persons?limit=5&offset=0&name=Ivan&gender=male"
 ```
 
-Example response:
+Пример ответа:
 ```json
 {
   "data": [
@@ -81,7 +81,7 @@ Example response:
 }
 ```
 
-### 2. Creating a New Person
+### 2. Создание новой персоны
 
 ```bash
 curl -X POST "http://localhost/api/v1/persons" \
@@ -93,19 +93,19 @@ curl -X POST "http://localhost/api/v1/persons" \
   }'
 ```
 
-### 3. Getting a Person by ID
+### 3. Получение персоны по ID
 
 ```bash
 curl -X GET "http://localhost/api/v1/persons/550e8400-e29b-41d4-a716-446655440001"
 ```
 
-### 4. Enriching Person Data
+### 4. Обогащение данных персоны
 
 ```bash
 curl -X POST "http://localhost/api/v1/persons/550e8400-e29b-41d4-a716-446655440001/enrich"
 ```
 
-### 5. Updating a Person
+### 5. Обновление персоны
 
 ```bash
 curl -X PUT "http://localhost/api/v1/persons/550e8400-e29b-41d4-a716-446655440001" \
@@ -117,47 +117,43 @@ curl -X PUT "http://localhost/api/v1/persons/550e8400-e29b-41d4-a716-44665544000
   }'
 ```
 
-### 6. Deleting a Person
+### 6. Удаление персоны
 
 ```bash
 curl -X DELETE "http://localhost/api/v1/persons/550e8400-e29b-41d4-a716-446655440001"
 ```
 
-## External APIs for Data Enrichment
+## Внешние API для обогащения данных
 
-The service uses the following external APIs to enrich data:
+Сервис использует следующие внешние API для обогащения данных:
 
-- **Age**: [https://api.agify.io](https://api.agify.io) - determines the probable age by name
-- **Gender**: [https://api.genderize.io](https://api.genderize.io) - determines the probable gender by name
-- **Nationality**: [https://api.nationalize.io](https://api.nationalize.io) - determines the probable nationality by name
+- **Age**: [https://api.agify.io](https://api.agify.io) — определяет вероятный возраст по имени
+- **Gender**: [https://api.genderize.io](https://api.genderize.io) — определяет вероятный пол по имени
+- **Nationality**: [https://api.nationalize.io](https://api.nationalize.io) — определяет вероятную национальность по имени
 
-## Database Structure
+## Структура базы данных
 
-### Table `people`
+### Таблица `people`
 
-| Field | Type | Description |
+| Поле | Тип | Описание |
 |------|-----|----------|
-| `id` | UUID | Primary key, unique person identifier |
-| `name` | VARCHAR(100) | Person's first name (required) |
-| `surname` | VARCHAR(100) | Person's last name (required) |
-| `patronymic` | VARCHAR(100) | Person's patronymic (optional) |
-| `age` | INTEGER | Person's age |
-| `gender` | VARCHAR(10) | Person's gender |
-| `gender_probability` | DECIMAL(5,4) | Gender determination probability |
-| `nationality` | VARCHAR(2) | Country code (nationality) |
-| `nationality_probability` | DECIMAL(5,4) | Nationality determination probability |
-| `created_at` | TIMESTAMP WITH TIME ZONE | Record creation date and time |
-| `updated_at` | TIMESTAMP WITH TIME ZONE | Record last update date and time |
+| `id` | UUID | Первичный ключ, уникальный идентификатор персоны |
+| `name` | VARCHAR(100) | Имя (обязательно) |
+| `surname` | VARCHAR(100) | Фамилия (обязательно) |
+| `patronymic` | VARCHAR(100) | Отчество (опционально) |
+| `age` | INTEGER | Возраст |
+| `gender` | VARCHAR(10) | Пол |
+| `gender_probability` | DECIMAL(5,4) | Вероятность определения пола |
+| `nationality` | VARCHAR(2) | Код страны (национальность) |
+| `nationality_probability` | DECIMAL(5,4) | Вероятность определения национальности |
+| `created_at` | TIMESTAMP WITH TIME ZONE | Дата и время создания записи |
+| `updated_at` | TIMESTAMP WITH TIME ZONE | Дата и время последнего обновления записи |
 
-## Migrations
+## Миграции
 
-The service automatically applies migrations at startup. Migration files are located in the migrations directory.
+Сервис автоматически применяет миграции при старте. Файлы миграций находятся в директории migrations.
 
-## Logging
-
-The system uses structured logging with the Zap library. Logs contain information about requests, errors, and service operation.
-
-## Interaction Screenshots
+## Скриншоты взаимодействия
 
 Swagger:
 ![alt text](docs/photo/Swagger.png)

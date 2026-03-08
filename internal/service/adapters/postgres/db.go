@@ -37,8 +37,7 @@ func (p *Adapter) Close(ctx context.Context) {
 
 func (p *Adapter) Ping(ctx context.Context) error {
 	logger.Debug(ctx, "pinging PostgreSQL database")
-	err := p.db.Ping(ctx)
-	if err != nil {
+	if err := p.db.Ping(ctx); err != nil {
 		logger.Error(ctx, "failed to ping PostgreSQL database", zap.Error(err))
 		return fmt.Errorf("failed to ping database: %w", err)
 	}
