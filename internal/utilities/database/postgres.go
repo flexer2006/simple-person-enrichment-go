@@ -7,7 +7,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/flexer2006/case-person-enrichment-go/internal/utilies"
+	"github.com/flexer2006/case-person-enrichment-go/internal/utilities"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 )
@@ -52,7 +52,7 @@ type PostgresDB struct {
 
 func NewPostgres(ctx context.Context, config PostgresConfig) (*PostgresDB, error) {
 	if err := config.Validate(); err != nil {
-		utilies.Error(ctx, "invalid database configuration", zap.Error(err))
+		utilities.Error(ctx, "invalid database configuration", zap.Error(err))
 		return nil, err
 	}
 	dsn := config.DSN()
@@ -64,11 +64,11 @@ func NewPostgres(ctx context.Context, config PostgresConfig) (*PostgresDB, error
 }
 
 func connect(ctx context.Context, dsn string, minConn, maxConn int) (*pgxpool.Pool, error) {
-	utilies.Info(ctx, "connecting to postgres database")
+	utilities.Info(ctx, "connecting to postgres database")
 
 	cfg, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		utilies.Error(ctx, "failed to parse database configuration", zap.Error(err))
+		utilities.Error(ctx, "failed to parse database configuration", zap.Error(err))
 		return nil, fmt.Errorf("failed to parse database configuration: %w", err)
 	}
 
@@ -79,17 +79,17 @@ func connect(ctx context.Context, dsn string, minConn, maxConn int) (*pgxpool.Po
 
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
-		utilies.Error(ctx, "failed to create connection pool", zap.Error(err))
+		utilities.Error(ctx, "failed to create connection pool", zap.Error(err))
 		return nil, fmt.Errorf("failed to create connection pool: %w", err)
 	}
 
 	if err := pool.Ping(ctx); err != nil {
 		pool.Close()
-		utilies.Error(ctx, "failed to ping database", zap.Error(err))
+		utilities.Error(ctx, "failed to ping database", zap.Error(err))
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	utilies.Info(ctx, "connected to postgres database")
+	utilities.Info(ctx, "connected to postgres database")
 	return pool, nil
 }
 
@@ -117,7 +117,7 @@ func (db *PostgresDB) Pool() *pgxpool.Pool {
 }
 
 func (db *PostgresDB) Close(ctx context.Context) {
-	utilies.Info(ctx, "closing postgres database connection")
+	utilities.Info(ctx, "closing postgres database connection")
 	db.pool.Close()
 }
 

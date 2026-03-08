@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	repoports "github.com/flexer2006/case-person-enrichment-go/internal/service/ports"
-	logger "github.com/flexer2006/case-person-enrichment-go/internal/utilies"
-	"github.com/flexer2006/case-person-enrichment-go/internal/utilies/database"
+	logger "github.com/flexer2006/case-person-enrichment-go/internal/utilities"
+	"github.com/flexer2006/case-person-enrichment-go/internal/utilities/database"
 	"go.uber.org/zap"
 )
 

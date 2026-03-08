@@ -88,6 +88,10 @@ func (d *Database) RollbackMigrations(ctx context.Context) error {
 	return nil
 }
 
+func (d *Database) Provider() PostgresProvider {
+	return d.provider
+}
+
 func (d *Database) GetMigrationVersion(ctx context.Context) (uint, bool, error) {
 	dsn := d.provider.GetDSN()
 	version, dirty, err := d.migrator.Version(ctx, dsn)

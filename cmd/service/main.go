@@ -9,16 +9,16 @@ import (
 
 	"github.com/flexer2006/case-person-enrichment-go/internal/service/app"
 	"github.com/flexer2006/case-person-enrichment-go/internal/service/domain"
-	"github.com/flexer2006/case-person-enrichment-go/internal/utilies"
-	"github.com/flexer2006/case-person-enrichment-go/internal/utilies/database"
+	"github.com/flexer2006/case-person-enrichment-go/internal/utilities"
+	"github.com/flexer2006/case-person-enrichment-go/internal/utilities/database"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 func main() {
-	initialLogger := utilies.NewConsole(utilies.InfoLevel, true)
-	utilies.SetGlobal(initialLogger)
+	initialLogger := utilities.NewConsole(utilities.InfoLevel, true)
+	utilities.SetGlobal(initialLogger)
 
 	ctx := context.Background()
 	var exitCode int
@@ -39,37 +39,37 @@ func main() {
 			}
 		}()
 		var cfgPath = "./deploy/.env"
-		cfg, err := utilies.Load[domain.Config](ctx, utilies.LoadOptions{
+		cfg, err := utilities.Load[domain.Config](ctx, utilities.LoadOptions{
 			ConfigPath: cfgPath,
 		})
 		if err != nil {
-			utilies.Error(ctx, "failed to load configuration", zap.Error(err))
+			utilities.Error(ctx, "failed to load configuration", zap.Error(err))
 			exitCode = 1
 			return
 		}
 
-		var finalLogger *utilies.Logger
+		var finalLogger *utilities.Logger
 		switch cfg.Logger.Model {
 		case "development":
-			finalLogger, err = utilies.NewDevelopment()
+			finalLogger, err = utilities.NewDevelopment()
 		case "production":
-			finalLogger, err = utilies.NewProduction()
+			finalLogger, err = utilities.NewProduction()
 		default:
-			utilies.Warn(ctx, "unknown logger model, using development", zap.String("model", cfg.Logger.Model))
-			finalLogger, err = utilies.NewDevelopment()
+			utilities.Warn(ctx, "unknown logger model, using development", zap.String("model", cfg.Logger.Model))
+			finalLogger, err = utilities.NewDevelopment()
 		}
 
 		if err != nil {
-			utilies.Error(ctx, "failed to initialize logger with config", zap.Error(err))
+			utilities.Error(ctx, "failed to initialize logger with config", zap.Error(err))
 			exitCode = 1
 			return
 		}
 
-		utilies.SetGlobal(finalLogger)
+		utilities.SetGlobal(finalLogger)
 		var defaultTimeout = 5 * time.Second
 		shutdownTimeout, err := time.ParseDuration(cfg.Graceful.ShutdownTimeout)
 		if err != nil {
-			utilies.Error(ctx, "invalid graceful shutdown timeout", zap.Error(err))
+			utilities.Error(ctx, "invalid graceful shutdown timeout", zap.Error(err))
 			shutdownTimeout = defaultTimeout
 		}
 
@@ -90,36 +90,36 @@ func main() {
 			ApplyMigrations: true,
 		}
 
-		utilies.Info(ctx, "initializing database")
+		utilities.Info(ctx, "initializing database")
 		data, err := database.New(ctx, dbConfig)
 		if err != nil {
-			utilies.Error(ctx, "failed to initialize database", zap.Error(err))
+			utilities.Error(ctx, "failed to initialize database", zap.Error(err))
 			exitCode = 1
 			return
 		}
 
 		if err := data.Ping(ctx); err != nil {
-			utilies.Error(ctx, "database ping failed", zap.Error(err))
+			utilities.Error(ctx, "database ping failed", zap.Error(err))
 			exitCode = 1
 			return
 		}
 
 		version, dirty, err := data.GetMigrationVersion(ctx)
 		if err != nil {
-			utilies.Warn(ctx, "failed to get migration version", zap.Error(err))
+			utilities.Warn(ctx, "failed to get migration version", zap.Error(err))
 		} else {
 			if dirty {
-				utilies.Warn(ctx, "database has dirty migration", zap.Uint("version", version))
+				utilities.Warn(ctx, "database has dirty migration", zap.Uint("version", version))
 			} else {
-				utilies.Info(ctx, "current migration version", zap.Uint("version", version))
+				utilities.Info(ctx, "current migration version", zap.Uint("version", version))
 			}
 		}
 
-		utilies.Info(ctx, "database initialized successfully")
+		utilities.Info(ctx, "database initialized successfully")
 
-		application, err := app.NewApplication(ctx, cfg)
+		application, err := app.NewApplication(ctx, cfg, data.Provider(), nil)
 		if err != nil {
-			utilies.Error(ctx, "failed to initialize application", zap.Error(err))
+			utilities.Error(ctx, "failed to initialize application", zap.Error(err))
 			exitCode = 1
 			return
 		}
@@ -129,13 +129,13 @@ func main() {
 
 		go func() {
 			if err := application.Start(appCtx); err != nil {
-				utilies.Error(ctx, "application stopped with error", zap.Error(err))
+				utilities.Error(ctx, "application stopped with error", zap.Error(err))
 				exitCode = 1
 				appCancel()
 			}
 		}()
 
-		utilies.Info(ctx, "service started",
+		utilities.Info(ctx, "service started",
 			zap.String("environment", cfg.Logger.Model),
 			zap.String("log_level", cfg.Logger.Level),
 			zap.String("startup_time", time.Now().Format(time.RFC3339)),
@@ -148,20 +148,20 @@ func main() {
 			})),
 		)
 
-		if err := utilies.Wait(ctx, shutdownTimeout,
+		if err := utilities.Wait(ctx, shutdownTimeout,
 			func(ctx context.Context) error {
 				appCancel()
 				return application.Stop(ctx)
 			},
 			func(ctx context.Context) error {
-				utilies.Info(ctx, "closing database connection")
+				utilities.Info(ctx, "closing database connection")
 				data.Close(ctx)
 				return nil
 			},
 		); err != nil {
-			utilies.Error(ctx, "shutdown hooks returned error", zap.Error(err))
+			utilities.Error(ctx, "shutdown hooks returned error", zap.Error(err))
 		}
-		utilies.Info(ctx, "service shutdown complete")
+		utilities.Info(ctx, "service shutdown complete")
 	}()
 
 	if exitCode != 0 {

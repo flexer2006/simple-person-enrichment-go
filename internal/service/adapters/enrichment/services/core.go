@@ -1,42 +1,19 @@
 package api
 
 import (
-	"context"
-
-	"github.com/flexer2006/case-person-enrichment-go/internal/service/domain"
-	portsapi "github.com/flexer2006/case-person-enrichment-go/internal/service/ports"
-
-	"github.com/google/uuid"
+	"github.com/flexer2006/case-person-enrichment-go/internal/service/ports"
 )
 
-var _ portsapi.API = (*API)(nil)
+type ageSvc = ports.AgeAPI
 
-type ageSvc interface {
-	GetAgeByName(ctx context.Context, name string) (int, float64, error)
-}
+type genderSvc = ports.GenderAPI
 
-type genderSvc interface {
-	GetGenderByName(ctx context.Context, name string) (string, float64, error)
-}
-
-type nationalitySvc interface {
-	GetNationalityByName(ctx context.Context, name string) (string, float64, error)
-}
-
-type personSvc interface {
-	GetByID(ctx context.Context, id uuid.UUID) (*domain.Person, error)
-	GetPersons(ctx context.Context, filter map[string]any, offset, limit int) ([]*domain.Person, int, error)
-	CreatePerson(ctx context.Context, person *domain.Person) error
-	UpdatePerson(ctx context.Context, person *domain.Person) error
-	DeletePerson(ctx context.Context, id uuid.UUID) error
-	EnrichPerson(ctx context.Context, id uuid.UUID) (*domain.Person, error)
-}
+type nationalitySvc = ports.NationalityAPI
 
 type API struct {
 	ageSvc         ageSvc
 	genderSvc      genderSvc
 	nationalitySvc nationalitySvc
-	personSvc      personSvc
 }
 
 func NewAPI(ageSvc ageSvc, genderSvc genderSvc, nationalitySvc nationalitySvc) *API {
@@ -55,31 +32,14 @@ func NewDefaultAPI() *API {
 	}
 }
 
-func (a *API) Age() interface {
-	GetAgeByName(ctx context.Context, name string) (int, float64, error)
-} {
+func (a *API) Age() ports.AgeAPI {
 	return a.ageSvc
 }
 
-func (a *API) Gender() interface {
-	GetGenderByName(ctx context.Context, name string) (string, float64, error)
-} {
+func (a *API) Gender() ports.GenderAPI {
 	return a.genderSvc
 }
 
-func (a *API) Nationality() interface {
-	GetNationalityByName(ctx context.Context, name string) (string, float64, error)
-} {
+func (a *API) Nationality() ports.NationalityAPI {
 	return a.nationalitySvc
-}
-
-func (a *API) Person() interface {
-	GetByID(ctx context.Context, id uuid.UUID) (*domain.Person, error)
-	GetPersons(ctx context.Context, filter map[string]any, offset, limit int) ([]*domain.Person, int, error)
-	CreatePerson(ctx context.Context, person *domain.Person) error
-	UpdatePerson(ctx context.Context, person *domain.Person) error
-	DeletePerson(ctx context.Context, id uuid.UUID) error
-	EnrichPerson(ctx context.Context, id uuid.UUID) (*domain.Person, error)
-} {
-	return a.personSvc
 }

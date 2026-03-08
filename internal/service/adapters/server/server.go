@@ -6,7 +6,7 @@ import (
 
 	"github.com/flexer2006/case-person-enrichment-go/internal/service/domain"
 	"github.com/flexer2006/case-person-enrichment-go/internal/service/ports"
-	logger "github.com/flexer2006/case-person-enrichment-go/internal/utilies"
+	"github.com/flexer2006/case-person-enrichment-go/internal/utilities"
 	"github.com/gofiber/fiber/v3"
 	"go.uber.org/zap"
 
@@ -55,15 +55,14 @@ func New(config domain.Config, api ports.API, repositories ports.Repositories) *
 		config: config,
 	}
 }
-
 func (s *Server) Start(ctx context.Context) error {
 	address := fmt.Sprintf("%s:%d", s.config.Server.Host, s.config.Server.Port)
 
-	logger.Info(ctx, "starting HTTP server", zap.String("address", address))
+	utilities.Info(ctx, "starting HTTP server", zap.String("address", address))
 
 	go func() {
 		if err := s.app.Listen(address); err != nil {
-			logger.Error(ctx, "failed to start HTTP server", zap.Error(err))
+			utilities.Error(ctx, "failed to start HTTP server", zap.Error(err))
 		}
 	}()
 
@@ -72,10 +71,10 @@ func (s *Server) Start(ctx context.Context) error {
 }
 
 func (s *Server) Stop(ctx context.Context) error {
-	logger.Info(ctx, "stopping HTTP server")
+	utilities.Info(ctx, "stopping HTTP server")
 
 	if err := s.app.ShutdownWithContext(ctx); err != nil {
-		logger.Error(ctx, "failed to shutdown HTTP server gracefully", zap.Error(err))
+		utilities.Error(ctx, "failed to shutdown HTTP server gracefully", zap.Error(err))
 		return fmt.Errorf("failed to shutdown HTTP server gracefully: %w", err)
 	}
 

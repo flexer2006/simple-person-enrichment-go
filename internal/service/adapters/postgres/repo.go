@@ -5,7 +5,7 @@ import (
 
 	"github.com/flexer2006/case-person-enrichment-go/internal/service/domain"
 	"github.com/flexer2006/case-person-enrichment-go/internal/service/ports"
-	"github.com/flexer2006/case-person-enrichment-go/internal/utilies/database"
+	"github.com/flexer2006/case-person-enrichment-go/internal/utilities/database"
 
 	"github.com/google/uuid"
 )

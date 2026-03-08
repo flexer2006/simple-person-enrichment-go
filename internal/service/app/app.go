@@ -10,52 +10,37 @@ import (
 	"github.com/flexer2006/case-person-enrichment-go/internal/service/adapters/server"
 	"github.com/flexer2006/case-person-enrichment-go/internal/service/domain"
 	"github.com/flexer2006/case-person-enrichment-go/internal/service/ports"
-	"github.com/flexer2006/case-person-enrichment-go/internal/utilies"
-	dbpkg "github.com/flexer2006/case-person-enrichment-go/internal/utilies/database"
+	"github.com/flexer2006/case-person-enrichment-go/internal/utilities"
+	dbpkg "github.com/flexer2006/case-person-enrichment-go/internal/utilities/database"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
-type Application struct {
-	config        *domain.Config
-	db            *dbpkg.PostgresDB
-	pgAdapter     *postgres.Adapter
-	apiAdapter    ports.API
-	repositories  ports.Repositories
-	httpServer    *server.Server
-	personService *personServiceImpl
+type PersonService interface {
+	GetByID(ctx context.Context, id uuid.UUID) (*domain.Person, error)
+	GetPersons(ctx context.Context, filter map[string]any, offset, limit int) ([]*domain.Person, int, error)
+	CreatePerson(ctx context.Context, person *domain.Person) error
+	UpdatePerson(ctx context.Context, person *domain.Person) error
+	DeletePerson(ctx context.Context, id uuid.UUID) error
+	EnrichPerson(ctx context.Context, id uuid.UUID) (*domain.Person, error)
 }
 
-func NewApplication(ctx context.Context, config *domain.Config) (*Application, error) {
-	utilies.Info(ctx, "initializing application")
+type Application struct {
+	config        *domain.Config
+	db            dbpkg.PostgresProvider
+	httpServer    *server.Server
+	personService PersonService
+}
 
-	dbConfig := dbpkg.PostgresConfig{
-		Host:     config.Postgres.Host,
-		Port:     config.Postgres.Port,
-		User:     config.Postgres.User,
-		Password: config.Postgres.Password,
-		Database: config.Postgres.Database,
-		SSLMode:  config.Postgres.SSLMode,
-		MinConns: config.Postgres.PoolMinConns,
-		MaxConns: config.Postgres.PoolMaxConns,
-	}
-
-	database, err := dbpkg.NewPostgres(ctx, dbConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize database: %w", err)
-	}
-
-	if config.Migrations.Path != "" {
-		migrator := dbpkg.NewMig(dbpkg.MigrateConfig{Path: config.Migrations.Path})
-		if err := migrator.Up(ctx, database.GetDSN()); err != nil {
-			return nil, fmt.Errorf("failed to apply migrations: %w", err)
-		}
-	}
+func NewApplication(ctx context.Context, config *domain.Config, database dbpkg.PostgresProvider, apiAdapter ports.API) (*Application, error) {
+	utilities.Info(ctx, "initializing application")
 
 	pgAdapter := postgres.NewPostgresAdapter(database)
 
-	apiAdapter := enrichment.NewDefaultEnrichment()
+	if apiAdapter == nil {
+		apiAdapter = enrichment.NewDefaultEnrichment()
+	}
 
 	personSvc := NewPersonService(pgAdapter.Repositories(), apiAdapter)
 
@@ -64,19 +49,16 @@ func NewApplication(ctx context.Context, config *domain.Config) (*Application, e
 	app := &Application{
 		config:        config,
 		db:            database,
-		pgAdapter:     pgAdapter,
-		apiAdapter:    apiAdapter,
-		repositories:  pgAdapter.Repositories(),
 		httpServer:    httpServer,
 		personService: personSvc,
 	}
 
-	utilies.Info(ctx, "application initialized successfully")
+	utilities.Info(ctx, "application initialized successfully")
 	return app, nil
 }
 
 func (a *Application) Start(ctx context.Context) error {
-	utilies.Info(ctx, "starting application")
+	utilities.Info(ctx, "starting application")
 
 	if err := a.httpServer.Start(ctx); err != nil {
 		return fmt.Errorf("failed to start HTTP server: %w", err)
@@ -85,12 +67,12 @@ func (a *Application) Start(ctx context.Context) error {
 }
 
 func (a *Application) Stop(ctx context.Context) error {
-	utilies.Info(ctx, "stopping application")
+	utilities.Info(ctx, "stopping application")
 
 	shutdownTimeout, err := time.ParseDuration(a.config.Graceful.ShutdownTimeout)
 	if err != nil {
 		shutdownTimeout = 5 * time.Second
-		utilies.Warn(ctx, "invalid graceful shutdown timeout, using default",
+		utilities.Warn(ctx, "invalid graceful shutdown timeout, using default",
 			zap.String("default", shutdownTimeout.String()))
 	}
 
@@ -98,31 +80,21 @@ func (a *Application) Stop(ctx context.Context) error {
 	defer cancel()
 
 	if err := a.httpServer.Stop(ctx); err != nil {
-		utilies.Error(ctx, "error stopping HTTP server", zap.Error(err))
+		utilities.Error(ctx, "error stopping HTTP server", zap.Error(err))
 	}
 
-	a.pgAdapter.Close(ctx)
+	if a.db != nil {
+		a.db.Close(ctx)
+	}
 
-	utilies.Info(ctx, "application stopped")
+	utilities.Info(ctx, "application stopped")
 	return nil
 }
 
-func (a *Application) Repositories() ports.Repositories {
-	return a.repositories
-}
-
-func (a *Application) API() ports.API {
-	return a.apiAdapter
-}
-
-func (a *Application) PersonService() *personServiceImpl {
+func (a *Application) PersonService() PersonService {
 	return a.personService
 }
 
-// personServiceImpl handles domain-specific operations using the
-// storage and API adapters. The flattened Repositories interface makes it
-// easy to call storage methods directly without the previous nested
-// Person() accessor.
 func NewPersonService(repositories ports.Repositories, apiAdapter ports.API) *personServiceImpl {
 	return &personServiceImpl{
 		repositories: repositories,
@@ -173,7 +145,7 @@ func (s *personServiceImpl) DeletePerson(ctx context.Context, id uuid.UUID) erro
 }
 
 func (s *personServiceImpl) EnrichPerson(ctx context.Context, id uuid.UUID) (*domain.Person, error) {
-	utilies.Debug(ctx, "enriching person data", zap.String("id", id.String()))
+	utilities.Debug(ctx, "enriching person data", zap.String("id", id.String()))
 
 	person, err := s.repositories.GetByID(ctx, id)
 	if err != nil {
@@ -185,7 +157,7 @@ func (s *personServiceImpl) EnrichPerson(ctx context.Context, id uuid.UUID) (*do
 		if err == nil {
 			person.Age = &age
 		} else {
-			utilies.Warn(ctx, "failed to enrich with age data", zap.Error(err))
+			utilities.Warn(ctx, "failed to enrich with age data", zap.Error(err))
 		}
 	}
 
@@ -195,7 +167,7 @@ func (s *personServiceImpl) EnrichPerson(ctx context.Context, id uuid.UUID) (*do
 			person.Gender = &gender
 			person.GenderProbability = &probability
 		} else {
-			utilies.Warn(ctx, "failed to enrich with gender data", zap.Error(err))
+			utilities.Warn(ctx, "failed to enrich with gender data", zap.Error(err))
 		}
 	}
 
@@ -205,7 +177,7 @@ func (s *personServiceImpl) EnrichPerson(ctx context.Context, id uuid.UUID) (*do
 			person.Nationality = &nationality
 			person.NationalityProbability = &probability
 		} else {
-			utilies.Warn(ctx, "failed to enrich with nationality data", zap.Error(err))
+			utilities.Warn(ctx, "failed to enrich with nationality data", zap.Error(err))
 		}
 	}
 

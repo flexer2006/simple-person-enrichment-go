@@ -9,7 +9,7 @@ import (
 
 	domain "github.com/flexer2006/case-person-enrichment-go/internal/service/domain"
 	nationalitymodels "github.com/flexer2006/case-person-enrichment-go/internal/service/domain"
-	logger "github.com/flexer2006/case-person-enrichment-go/internal/utilies"
+	logger "github.com/flexer2006/case-person-enrichment-go/internal/utilities"
 	"go.uber.org/zap"
 )
 

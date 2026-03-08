@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/flexer2006/case-person-enrichment-go/internal/service/domain"
-	logger "github.com/flexer2006/case-person-enrichment-go/internal/utilies"
-	"github.com/flexer2006/case-person-enrichment-go/internal/utilies/database"
+	logger "github.com/flexer2006/case-person-enrichment-go/internal/utilities"
+	"github.com/flexer2006/case-person-enrichment-go/internal/utilities/database"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"

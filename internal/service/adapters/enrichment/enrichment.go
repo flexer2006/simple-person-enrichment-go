@@ -1,13 +1,8 @@
 package enrichment
 
 import (
-	"context"
-
 	api "github.com/flexer2006/case-person-enrichment-go/internal/service/adapters/enrichment/services"
-	"github.com/flexer2006/case-person-enrichment-go/internal/service/domain"
 	apiports "github.com/flexer2006/case-person-enrichment-go/internal/service/ports"
-
-	"github.com/google/uuid"
 )
 
 var _ apiports.API = (*Enrichment)(nil)
@@ -24,31 +19,18 @@ func NewDefaultEnrichment() *Enrichment {
 	return &Enrichment{impl: api.NewDefaultAPI()}
 }
 
-func (e *Enrichment) Age() interface {
-	GetAgeByName(ctx context.Context, name string) (int, float64, error)
-} {
+func (e *Enrichment) Age() apiports.AgeAPI {
 	return e.impl.Age()
 }
 
-func (e *Enrichment) Gender() interface {
-	GetGenderByName(ctx context.Context, name string) (string, float64, error)
-} {
+func (e *Enrichment) Gender() apiports.GenderAPI {
 	return e.impl.Gender()
 }
 
-func (e *Enrichment) Nationality() interface {
-	GetNationalityByName(ctx context.Context, name string) (string, float64, error)
-} {
+func (e *Enrichment) Nationality() apiports.NationalityAPI {
 	return e.impl.Nationality()
 }
 
-func (e *Enrichment) Person() interface {
-	GetByID(ctx context.Context, id uuid.UUID) (*domain.Person, error)
-	GetPersons(ctx context.Context, filter map[string]any, offset, limit int) ([]*domain.Person, int, error)
-	CreatePerson(ctx context.Context, person *domain.Person) error
-	UpdatePerson(ctx context.Context, person *domain.Person) error
-	DeletePerson(ctx context.Context, id uuid.UUID) error
-	EnrichPerson(ctx context.Context, id uuid.UUID) (*domain.Person, error)
-} {
-	return e.impl.Person()
-}
+// Person enrichment was previously part of the bundled API
+// interface, but the service layer now owns person-related logic.
+// We keep this adapter around only for the three external clients.
