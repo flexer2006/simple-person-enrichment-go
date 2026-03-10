@@ -8,11 +8,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/flexer2006/case-person-enrichment-go/internal/service/adapters/enrichment"
-	"github.com/flexer2006/case-person-enrichment-go/internal/service/adapters/postgres"
-	"github.com/flexer2006/case-person-enrichment-go/internal/service/adapters/server"
-	"github.com/flexer2006/case-person-enrichment-go/internal/service/config"
-	"github.com/flexer2006/case-person-enrichment-go/internal/service/logger"
+	"github.com/flexer2006/pes-api/internal/service/adapters/enrichment"
+	"github.com/flexer2006/pes-api/internal/service/adapters/postgres"
+	"github.com/flexer2006/pes-api/internal/service/adapters/server"
+	"github.com/flexer2006/pes-api/internal/service/config"
+	"github.com/flexer2006/pes-api/internal/service/logger"
 
 	"github.com/ilyakaznacheev/cleanenv"
 	"go.uber.org/zap"

@@ -1,4 +1,4 @@
-module github.com/flexer2006/case-person-enrichment-go
+module github.com/flexer2006/pes-api
 
 go 1.26.1
 

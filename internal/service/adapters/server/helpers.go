@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/flexer2006/case-person-enrichment-go/internal/service/domain"
-	"github.com/flexer2006/case-person-enrichment-go/internal/service/logger"
+	"github.com/flexer2006/pes-api/internal/service/domain"
+	"github.com/flexer2006/pes-api/internal/service/logger"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"

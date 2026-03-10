@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/flexer2006/case-person-enrichment-go/internal/service/app"
+	"github.com/flexer2006/pes-api/internal/service/app"
 )
 
 const envs = "./deploy/.env"

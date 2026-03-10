@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	_ "github.com/flexer2006/case-person-enrichment-go/docs/swagger"
-	"github.com/flexer2006/case-person-enrichment-go/internal/service/config"
-	"github.com/flexer2006/case-person-enrichment-go/internal/service/logger"
-	"github.com/flexer2006/case-person-enrichment-go/internal/service/ports"
+	_ "github.com/flexer2006/pes-api/docs/swagger"
+	"github.com/flexer2006/pes-api/internal/service/config"
+	"github.com/flexer2006/pes-api/internal/service/logger"
+	"github.com/flexer2006/pes-api/internal/service/ports"
 
 	"github.com/gofiber/fiber/v3"
 	"go.uber.org/zap"

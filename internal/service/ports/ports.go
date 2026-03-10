@@ -3,7 +3,7 @@ package ports
 import (
 	"context"
 
-	"github.com/flexer2006/case-person-enrichment-go/internal/service/domain"
+	"github.com/flexer2006/pes-api/internal/service/domain"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
