@@ -1,5 +1,6 @@
+basePath: /api/v1
 definitions:
-  entities.Person:
+  domain.Person:
     properties:
       age:
         type: integer
@@ -26,12 +27,14 @@ definitions:
     type: object
 info:
   contact: {}
+  title: PES API
+  version: "1.0"
 paths:
   /persons:
     get:
       consumes:
       - application/json
-      description: Get a list of persons with filtering and pagination
+      description: Filtered, paginated list
       parameters:
       - default: 10
         description: Page size limit
@@ -83,27 +86,27 @@ paths:
             additionalProperties:
               type: string
             type: object
-      summary: Get list of persons
+      summary: List persons
       tags:
       - persons
     post:
       consumes:
       - application/json
-      description: Create a new person with the input data
+      description: Create a person
       parameters:
       - description: Person object to be created
         in: body
         name: person
         required: true
         schema:
-          $ref: '#/definitions/entities.Person'
+          $ref: '#/definitions/domain.Person'
       produces:
       - application/json
       responses:
         "201":
           description: Successfully created person
           schema:
-            $ref: '#/definitions/entities.Person'
+            $ref: '#/definitions/domain.Person'
         "400":
           description: Bad request - Invalid input
           schema:
@@ -116,14 +119,14 @@ paths:
             additionalProperties:
               type: string
             type: object
-      summary: Create new person
+      summary: Create person
       tags:
       - persons
   /persons/{id}:
     delete:
       consumes:
       - application/json
-      description: Delete a person by UUID
+      description: By UUID
       parameters:
       - description: Person UUID
         format: uuid
@@ -154,13 +157,13 @@ paths:
             additionalProperties:
               type: string
             type: object
-      summary: Delete person
+      summary: Remove person
       tags:
       - persons
     get:
       consumes:
       - application/json
-      description: Get person details by UUID
+      description: By UUID
       parameters:
       - description: Person UUID
         format: uuid
@@ -174,7 +177,7 @@ paths:
         "200":
           description: Successfully retrieved person
           schema:
-            $ref: '#/definitions/entities.Person'
+            $ref: '#/definitions/domain.Person'
         "400":
           description: Bad request - Invalid UUID
           schema:
@@ -193,13 +196,13 @@ paths:
             additionalProperties:
               type: string
             type: object
-      summary: Get person by ID
+      summary: Retrieve person
       tags:
       - persons
     put:
       consumes:
       - application/json
-      description: Update an existing person
+      description: Modify existing record
       parameters:
       - description: Person UUID
         format: uuid
@@ -212,14 +215,14 @@ paths:
         name: person
         required: true
         schema:
-          $ref: '#/definitions/entities.Person'
+          $ref: '#/definitions/domain.Person'
       produces:
       - application/json
       responses:
         "200":
           description: Successfully updated person
           schema:
-            $ref: '#/definitions/entities.Person'
+            $ref: '#/definitions/domain.Person'
         "400":
           description: Bad request - Invalid input
           schema:
@@ -245,8 +248,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Enrich person with age, gender, and nationality data from external
-        APIs
+      description: Add age, gender, nationality
       parameters:
       - description: Person UUID
         format: uuid
@@ -260,7 +262,7 @@ paths:
         "200":
           description: Successfully enriched person
           schema:
-            $ref: '#/definitions/entities.Person'
+            $ref: '#/definitions/domain.Person'
         "400":
           description: Bad request - Invalid UUID
           schema:
@@ -279,7 +281,7 @@ paths:
             additionalProperties:
               type: string
             type: object
-      summary: Enrich person data
+      summary: Enrich person
       tags:
       - persons
 swagger: "2.0"

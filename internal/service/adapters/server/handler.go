@@ -74,7 +74,7 @@ func (h *personHandler) getPersons(c fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param id path string true "Person UUID" format(uuid)
-// @Success 200 {object} entities.Person "Successfully retrieved person"
+// @Success 200 {object} domain.Person "Successfully retrieved person"
 // @Failure 400 {object} map[string]string "Bad request - Invalid UUID"
 // @Failure 404 {object} map[string]string "Person not found"
 // @Failure 500 {object} map[string]string "Internal server error"
@@ -98,8 +98,8 @@ func (h *personHandler) getPersonByID(c fiber.Ctx) error {
 // @Tags persons
 // @Accept json
 // @Produce json
-// @Param person body entities.Person true "Person object to be created"
-// @Success 201 {object} entities.Person "Successfully created person"
+// @Param person body domain.Person true "Person object to be created"
+// @Success 201 {object} domain.Person "Successfully created person"
 // @Failure 400 {object} map[string]string "Bad request - Invalid input"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /persons [post]
@@ -135,8 +135,8 @@ func (h *personHandler) createPerson(c fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param id path string true "Person UUID" format(uuid)
-// @Param person body entities.Person true "Person data to update"
-// @Success 200 {object} entities.Person "Successfully updated person"
+// @Param person body domain.Person true "Person data to update"
+// @Success 200 {object} domain.Person "Successfully updated person"
 // @Failure 400 {object} map[string]string "Bad request - Invalid input"
 // @Failure 404 {object} map[string]string "Person not found"
 // @Failure 500 {object} map[string]string "Internal server error"
@@ -202,7 +202,7 @@ func (h *personHandler) deletePerson(c fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param id path string true "Person UUID" format(uuid)
-// @Success 200 {object} entities.Person "Successfully enriched person"
+// @Success 200 {object} domain.Person "Successfully enriched person"
 // @Failure 400 {object} map[string]string "Bad request - Invalid UUID"
 // @Failure 404 {object} map[string]string "Person not found"
 // @Failure 500 {object} map[string]string "Internal server error"

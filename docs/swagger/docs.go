@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/persons": {
             "get": {
-                "description": "Get a list of persons with filtering and pagination",
+                "description": "Filtered, paginated list",
                 "consumes": [
                     "application/json"
                 ],
@@ -27,7 +27,7 @@ const docTemplate = `{
                 "tags": [
                     "persons"
                 ],
-                "summary": "Get list of persons",
+                "summary": "List persons",
                 "parameters": [
                     {
                         "minimum": 1,
@@ -102,7 +102,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create a new person with the input data",
+                "description": "Create a person",
                 "consumes": [
                     "application/json"
                 ],
@@ -112,7 +112,7 @@ const docTemplate = `{
                 "tags": [
                     "persons"
                 ],
-                "summary": "Create new person",
+                "summary": "Create person",
                 "parameters": [
                     {
                         "description": "Person object to be created",
@@ -120,7 +120,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/entities.Person"
+                            "$ref": "#/definitions/domain.Person"
                         }
                     }
                 ],
@@ -128,7 +128,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Successfully created person",
                         "schema": {
-                            "$ref": "#/definitions/entities.Person"
+                            "$ref": "#/definitions/domain.Person"
                         }
                     },
                     "400": {
@@ -154,7 +154,7 @@ const docTemplate = `{
         },
         "/persons/{id}": {
             "get": {
-                "description": "Get person details by UUID",
+                "description": "By UUID",
                 "consumes": [
                     "application/json"
                 ],
@@ -164,7 +164,7 @@ const docTemplate = `{
                 "tags": [
                     "persons"
                 ],
-                "summary": "Get person by ID",
+                "summary": "Retrieve person",
                 "parameters": [
                     {
                         "type": "string",
@@ -179,7 +179,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully retrieved person",
                         "schema": {
-                            "$ref": "#/definitions/entities.Person"
+                            "$ref": "#/definitions/domain.Person"
                         }
                     },
                     "400": {
@@ -212,7 +212,7 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Update an existing person",
+                "description": "Modify existing record",
                 "consumes": [
                     "application/json"
                 ],
@@ -238,7 +238,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/entities.Person"
+                            "$ref": "#/definitions/domain.Person"
                         }
                     }
                 ],
@@ -246,7 +246,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully updated person",
                         "schema": {
-                            "$ref": "#/definitions/entities.Person"
+                            "$ref": "#/definitions/domain.Person"
                         }
                     },
                     "400": {
@@ -279,7 +279,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete a person by UUID",
+                "description": "By UUID",
                 "consumes": [
                     "application/json"
                 ],
@@ -289,7 +289,7 @@ const docTemplate = `{
                 "tags": [
                     "persons"
                 ],
-                "summary": "Delete person",
+                "summary": "Remove person",
                 "parameters": [
                     {
                         "type": "string",
@@ -336,7 +336,7 @@ const docTemplate = `{
         },
         "/persons/{id}/enrich": {
             "post": {
-                "description": "Enrich person with age, gender, and nationality data from external APIs",
+                "description": "Add age, gender, nationality",
                 "consumes": [
                     "application/json"
                 ],
@@ -346,7 +346,7 @@ const docTemplate = `{
                 "tags": [
                     "persons"
                 ],
-                "summary": "Enrich person data",
+                "summary": "Enrich person",
                 "parameters": [
                     {
                         "type": "string",
@@ -361,7 +361,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully enriched person",
                         "schema": {
-                            "$ref": "#/definitions/entities.Person"
+                            "$ref": "#/definitions/domain.Person"
                         }
                     },
                     "400": {
@@ -396,7 +396,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "entities.Person": {
+        "domain.Person": {
             "type": "object",
             "properties": {
                 "age": {
@@ -439,11 +439,11 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
+	Version:          "1.0",
 	Host:             "",
-	BasePath:         "",
+	BasePath:         "/api/v1",
 	Schemes:          []string{},
-	Title:            "",
+	Title:            "PES API",
 	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,

@@ -1,12 +1,15 @@
 {
     "swagger": "2.0",
     "info": {
-        "contact": {}
+        "title": "PES API",
+        "contact": {},
+        "version": "1.0"
     },
+    "basePath": "/api/v1",
     "paths": {
         "/persons": {
             "get": {
-                "description": "Get a list of persons with filtering and pagination",
+                "description": "Filtered, paginated list",
                 "consumes": [
                     "application/json"
                 ],
@@ -16,7 +19,7 @@
                 "tags": [
                     "persons"
                 ],
-                "summary": "Get list of persons",
+                "summary": "List persons",
                 "parameters": [
                     {
                         "minimum": 1,
@@ -91,7 +94,7 @@
                 }
             },
             "post": {
-                "description": "Create a new person with the input data",
+                "description": "Create a person",
                 "consumes": [
                     "application/json"
                 ],
@@ -101,7 +104,7 @@
                 "tags": [
                     "persons"
                 ],
-                "summary": "Create new person",
+                "summary": "Create person",
                 "parameters": [
                     {
                         "description": "Person object to be created",
@@ -109,7 +112,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/entities.Person"
+                            "$ref": "#/definitions/domain.Person"
                         }
                     }
                 ],
@@ -117,7 +120,7 @@
                     "201": {
                         "description": "Successfully created person",
                         "schema": {
-                            "$ref": "#/definitions/entities.Person"
+                            "$ref": "#/definitions/domain.Person"
                         }
                     },
                     "400": {
@@ -143,7 +146,7 @@
         },
         "/persons/{id}": {
             "get": {
-                "description": "Get person details by UUID",
+                "description": "By UUID",
                 "consumes": [
                     "application/json"
                 ],
@@ -153,7 +156,7 @@
                 "tags": [
                     "persons"
                 ],
-                "summary": "Get person by ID",
+                "summary": "Retrieve person",
                 "parameters": [
                     {
                         "type": "string",
@@ -168,7 +171,7 @@
                     "200": {
                         "description": "Successfully retrieved person",
                         "schema": {
-                            "$ref": "#/definitions/entities.Person"
+                            "$ref": "#/definitions/domain.Person"
                         }
                     },
                     "400": {
@@ -201,7 +204,7 @@
                 }
             },
             "put": {
-                "description": "Update an existing person",
+                "description": "Modify existing record",
                 "consumes": [
                     "application/json"
                 ],
@@ -227,7 +230,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/entities.Person"
+                            "$ref": "#/definitions/domain.Person"
                         }
                     }
                 ],
@@ -235,7 +238,7 @@
                     "200": {
                         "description": "Successfully updated person",
                         "schema": {
-                            "$ref": "#/definitions/entities.Person"
+                            "$ref": "#/definitions/domain.Person"
                         }
                     },
                     "400": {
@@ -268,7 +271,7 @@
                 }
             },
             "delete": {
-                "description": "Delete a person by UUID",
+                "description": "By UUID",
                 "consumes": [
                     "application/json"
                 ],
@@ -278,7 +281,7 @@
                 "tags": [
                     "persons"
                 ],
-                "summary": "Delete person",
+                "summary": "Remove person",
                 "parameters": [
                     {
                         "type": "string",
@@ -325,7 +328,7 @@
         },
         "/persons/{id}/enrich": {
             "post": {
-                "description": "Enrich person with age, gender, and nationality data from external APIs",
+                "description": "Add age, gender, nationality",
                 "consumes": [
                     "application/json"
                 ],
@@ -335,7 +338,7 @@
                 "tags": [
                     "persons"
                 ],
-                "summary": "Enrich person data",
+                "summary": "Enrich person",
                 "parameters": [
                     {
                         "type": "string",
@@ -350,7 +353,7 @@
                     "200": {
                         "description": "Successfully enriched person",
                         "schema": {
-                            "$ref": "#/definitions/entities.Person"
+                            "$ref": "#/definitions/domain.Person"
                         }
                     },
                     "400": {
@@ -385,7 +388,7 @@
         }
     },
     "definitions": {
-        "entities.Person": {
+        "domain.Person": {
             "type": "object",
             "properties": {
                 "age": {
